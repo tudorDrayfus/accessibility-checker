@@ -1,7 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { chromium } from "playwright";
-import fs from "fs";
-import path from "path";
 import { translateViolation } from "./translations";
 
 export const runtime = "nodejs";
@@ -14,34 +11,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "URL is required" }, { status: 400 });
   }
 
-  const browser = await chromium.launch();
-  const page = await browser.newPage();
-
   try {
-    await page.goto(url, { waitUntil: "networkidle" });
+    const workerUrl = process.env.WORKER_URL ?? "http://localhost:3001";
 
-    // Load axe-core script from node_modules as plain text
-    const axePath = path.join(process.cwd(), "node_modules/axe-core/axe.min.js");
-    const axeScript = fs.readFileSync(axePath, "utf8");
-
-    // Inject it as a plain script into the page
-    await page.evaluate(axeScript);
-
-    // Run the analysis
-    const results = await page.evaluate(async () => {
-      return await (window as any).axe.run();
+    const response = await fetch(`${workerUrl}/scan`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
     });
 
-    await browser.close();
+    const data = await response.json();
 
-    const translated = results.violations.map((v: any) => ({
+    if (data.error) {
+      return NextResponse.json({ error: data.error }, { status: 500 });
+    }
+
+    const translated = data.violations.map((v: any) => ({
       id: v.id,
       impact: v.impact,
       nodes: v.nodes.length,
       ...translateViolation(v.id),
     }));
 
-    // Sort: quick wins first
     translated.sort((a: any, b: any) => {
       const order: Record<string, number> = { "Quick win": 1, "Moderate": 2, "Complex": 3 };
       return order[a.effort] - order[b.effort];
@@ -55,7 +46,6 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error) {
-    await browser.close();
     return NextResponse.json(
       { error: String(error) },
       { status: 500 }
