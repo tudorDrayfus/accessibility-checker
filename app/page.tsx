@@ -109,7 +109,6 @@ export default function Home() {
 
   const quickWins = violations.filter((v) => v.effort === "Quick win").length;
 
-  // Calculate scale factor for overlays
   const getScale = () => {
     if (!imageRef.current) return 1;
     return imageRef.current.offsetWidth / pageWidth;
@@ -256,7 +255,6 @@ export default function Home() {
         {/* VISUAL VIEW */}
         {view === "visual" && screenshot && (
           <div className="fade-up mb-10">
-            {/* Legend */}
             <div className="flex gap-4 mb-3">
               {(["Quick win", "Moderate", "Complex"] as const).map((e) => (
                 <div key={e} className="flex items-center gap-1.5">
@@ -269,7 +267,6 @@ export default function Home() {
               ))}
             </div>
 
-            {/* Screenshot with overlays */}
             <div
               ref={imageRef}
               className="relative w-full rounded-xl overflow-hidden border border-white/10"
@@ -282,11 +279,9 @@ export default function Home() {
                 className="w-full h-full object-cover object-top"
               />
 
-              {/* Overlay boxes */}
               {violations.map((violation) =>
                 (violation.boxes ?? []).map((box, boxIdx) => {
                   const config = effortConfig[violation.effort];
-                  const scale = getScale();
                   const isActive =
                     activeBox?.violation.id === violation.id &&
                     activeBox?.box === box;
@@ -314,7 +309,6 @@ export default function Home() {
                 })
               )}
 
-              {/* Tooltip */}
               {activeBox && (
                 <div
                   className="absolute z-50 w-64 bg-zinc-900 border border-white/10 rounded-xl p-4 shadow-2xl"
@@ -435,16 +429,15 @@ export default function Home() {
       {/* Footer */}
       <div className="w-full max-w-2xl mx-auto mt-16 pb-8 flex flex-col items-center gap-2">
         <p className="text-zinc-700 text-xs">
-          Please double check results. I am working on improving this, but if results are terrible{" "}
+          Please double check results as I am working on improving this.{" "}
           <a
             href="https://www.linkedin.com/in/tudor-teisanu-7b08a4b2/"
             target="_blank"
             rel="noopener noreferrer"
             className="text-zinc-500 hover:text-white transition"
           >
-            let me know
+            Please let me know if you have any feedback.
           </a>
-          .
         </p>
         <p className="text-zinc-700 text-xs">
           Made by{" "}
