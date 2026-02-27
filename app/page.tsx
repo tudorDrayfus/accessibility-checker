@@ -439,17 +439,7 @@ export default function Home() {
             Please let me know if you have any feedback.
           </a>
         </p>
-        <p className="text-zinc-700 text-xs">
-          Made by{" "}
-          <a
-            href="https://www.linkedin.com/in/tudor-teisanu-7b08a4b2/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-zinc-500 hover:text-white transition"
-          >
-            Tudor Teisanu
-          </a>
-        </p>
+        
       </div>
 
     </main>
