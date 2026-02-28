@@ -60,13 +60,22 @@ const effortConfig = {
   },
 };
 
+const ICONS: Record<string, string> = {
+  chevron_right: "›",
+  content_copy: "⎘",
+  check: "✓",
+  schedule: "◷",
+  verified: "✓",
+  feedback: "✉",
+  touch_app: "◉",
+  visibility: "◎",
+  visibility_off: "◌",
+};
+
 function MatIcon({ name, size = 16, className = "", style = {} }: { name: string; size?: number; className?: string; style?: React.CSSProperties }) {
   return (
-    <span
-      className={`material-symbols-outlined select-none ${className}`}
-      style={{ fontSize: size, lineHeight: 1, ...style }}
-    >
-      {name}
+    <span className={`select-none leading-none ${className}`} style={{ fontSize: size, lineHeight: 1, ...style }} aria-hidden="true">
+      {ICONS[name] ?? ""}
     </span>
   );
 }
@@ -160,7 +169,6 @@ export default function Home() {
     <main className="min-h-screen bg-[#0a0a0a]" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap');
-        @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@18,300,0,0');
         @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
         @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
         @keyframes pulse-dot { 0%,100% { opacity:1; } 50% { opacity:0.2; } }
@@ -169,7 +177,6 @@ export default function Home() {
         .fade-up-2 { animation: fadeUp 0.45s 0.18s ease both; }
         .fade-in   { animation: fadeIn 0.3s ease both; }
         .scanning-dot { animation: pulse-dot 1.2s infinite; }
-        .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 18; vertical-align:middle; }
         .violation-row { transition: background 0.12s; }
         .violation-row:hover { background: rgba(255,255,255,0.035); }
         .overlay-box { cursor:pointer; transition:all 0.18s ease; position:absolute; }
