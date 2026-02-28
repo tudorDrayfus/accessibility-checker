@@ -352,7 +352,7 @@ export default function Home() {
         <div className="min-h-screen flex flex-col items-center justify-center px-4 py-16">
           <div className="w-full max-w-xl">
             <div className="mb-12 fade-up">
-              <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-3 py-1 mb-6">
+              <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-1 mb-6">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 scanning-dot" />
                 <span className="text-xs text-zinc-300 tracking-wide">WCAG 2.1 AA — automated audit</span>
               </div>
@@ -502,7 +502,7 @@ export default function Home() {
                         <span className="text-zinc-200 text-xs font-semibold uppercase tracking-wider">{config.label}</span>
                         <span className="text-zinc-400 text-xs">{config.sublabel}</span>
                       </div>
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${config.badge}`}>
+                      <span className={`text-xs px-2 py-0.5 rounded-lg font-medium ${config.badge}`}>
                         {group.length}
                       </span>
                     </div>
