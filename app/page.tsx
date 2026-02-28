@@ -247,7 +247,7 @@ function CanvasOverlay({
 
     // ── Pass 1: dark veil over entire screenshot ──────────────────────────
     ctx.globalCompositeOperation = "source-over";
-    ctx.fillStyle = "rgba(0,0,0,0.40)";
+    ctx.fillStyle = "rgba(0,0,0,0.60)";
     ctx.fillRect(0, 0, W, H);
 
     // ── Pass 2: punch holes — fully reveal selected, subtly reveal others ─
@@ -257,10 +257,10 @@ function CanvasOverlay({
       const isActive = activeViolation?.id === v.id;
       // idle: slight reveal so areas stand out without colour
       // active: full reveal for selected, near-invisible for others
-      ctx.globalAlpha = isActive ? 1 : 0.4;
+      ctx.globalAlpha = isActive ? 1 : 0.6;
       for (const box of v.boxes ?? []) {
         const x = box.x * scaleX;
-        const y = (box.y * scaleY) + 5;
+        const y = (box.y * scaleY) + 20;
         const w = box.width * scaleX;
         const h = box.height * scaleY;
         ctx.beginPath();
@@ -671,7 +671,7 @@ export default function Home() {
                       <stop offset="100%" stopColor={scoreColor} />
                     </linearGradient>
                   </defs>
-                  <circle cx="24" cy="24" r="17" fill={scoreColor} stroke="#1e1e1e" strokeWidth="6" />
+                  <circle cx="24" cy="24" r="17" fill="none" stroke="#1e1e1e" strokeWidth="6" />
                   <circle
                     cx="24" cy="24" r="17"
                     fill="none"
