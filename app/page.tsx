@@ -254,8 +254,10 @@ function CanvasOverlay({
           ctx.lineWidth = 1;
         }
 
-        ctx.fillRect(x, y, w, h);
-        ctx.strokeRect(x, y, w, h);
+        ctx.beginPath();
+        ctx.roundRect(x, y, w, h, 4);
+        ctx.fill();
+        ctx.stroke();
 
         // Number badge on first box only — style matches the list panel badges
         if (i === 0) {
@@ -353,6 +355,8 @@ function CanvasOverlay({
   );
 }
 
+const SCAN_MESSAGES = ["Fetching page", "Handling banners", "Running WCAG checks", "Compiling results"];
+
 export default function Home() {
   const [domain, setDomain] = useState("");
   const [violations, setViolations] = useState<Violation[]>([]);
@@ -368,6 +372,7 @@ export default function Home() {
   const [urlHistory, setUrlHistory] = useState<string[]>([]);
   const rightPanelRef = useRef<HTMLDivElement>(null);
   const screenshotRef = useRef<HTMLDivElement>(null);
+  const leftPanelListRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { setUrlHistory(loadHistory()); }, []);
 
@@ -378,6 +383,17 @@ export default function Home() {
       return next;
     });
   }
+
+  // Auto-scroll left panel to show active violation (expanded)
+  useEffect(() => {
+    if (!activeViolation || !leftPanelListRef.current) return;
+    const container = leftPanelListRef.current;
+    requestAnimationFrame(() => {
+      const el = container.querySelector<HTMLElement>(`[data-violation-id="${activeViolation.id}"]`);
+      if (!el) return;
+      el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    });
+  }, [activeViolation]);
 
   // Auto-scroll right panel when selected overlay is out of view
   useEffect(() => {
@@ -449,6 +465,13 @@ export default function Home() {
     });
   }
 
+  const [scanMsgIdx, setScanMsgIdx] = useState(0);
+  useEffect(() => {
+    if (!loading) { setScanMsgIdx(0); return; }
+    const id = setInterval(() => setScanMsgIdx((i) => (i + 1) % SCAN_MESSAGES.length), 2000);
+    return () => clearInterval(id);
+  }, [loading]);
+
   const hasResults = total !== null && screenshot;
   const score = Math.max(0, 100 - (total ?? 0) * 5);
   const scoreColor = score > 60 ? "#34d399" : score > 30 ? "#fbbf24" : "#f87171";
@@ -462,6 +485,8 @@ export default function Home() {
         @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
         @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
         @keyframes pulse-dot { 0%,100% { opacity:1; } 50% { opacity:0.2; } }
+        @keyframes bounce-dot { 0%,80%,100% { transform:translateY(0); opacity:0.4; } 40% { transform:translateY(-4px); opacity:1; } }
+        @keyframes fade-msg { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
         .fade-up   { animation: fadeUp 0.45s ease both; }
         .fade-up-1 { animation: fadeUp 0.45s 0.09s ease both; }
         .fade-up-2 { animation: fadeUp 0.45s 0.18s ease both; }
@@ -502,13 +527,19 @@ export default function Home() {
                 />
                 <button
                   type="submit"
-                  disabled={loading || !domain}
+                  disabled={loading}
                   className="bg-white text-black font-semibold px-7 py-4 rounded-lg hover:bg-zinc-100 transition disabled:opacity-40 text-sm whitespace-nowrap"
                 >
                   {loading ? (
-                    <span className="flex items-center gap-2">
-                      <span className="w-3 h-3 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                      Scanning
+                    <span className="flex items-center gap-2.5 min-w-[140px] justify-center">
+                      <span className="flex gap-[3px] items-center">
+                        <span className="w-1 h-1 rounded-full bg-black" style={{ animation: "bounce-dot 1s 0ms infinite ease-in-out" }} />
+                        <span className="w-1 h-1 rounded-full bg-black" style={{ animation: "bounce-dot 1s 160ms infinite ease-in-out" }} />
+                        <span className="w-1 h-1 rounded-full bg-black" style={{ animation: "bounce-dot 1s 320ms infinite ease-in-out" }} />
+                      </span>
+                      <span key={scanMsgIdx} style={{ animation: "fade-msg 0.35s ease both" }}>
+                        {SCAN_MESSAGES[scanMsgIdx]}
+                      </span>
                     </span>
                   ) : "Scan site"}
                 </button>
@@ -593,10 +624,13 @@ export default function Home() {
                   disabled={loading}
                   className="bg-white text-black font-semibold px-3 py-2 rounded-lg hover:bg-zinc-100 transition disabled:opacity-40 text-xs whitespace-nowrap flex-shrink-0"
                 >
-                  {loading
-                    ? <span className="w-3 h-3 border-2 border-black/30 border-t-black rounded-full animate-spin block" />
-                    : "Scan"
-                  }
+                  {loading ? (
+                    <span className="flex gap-[3px] items-center px-0.5">
+                      <span className="w-1 h-1 rounded-full bg-black" style={{ animation: "bounce-dot 1s 0ms infinite ease-in-out" }} />
+                      <span className="w-1 h-1 rounded-full bg-black" style={{ animation: "bounce-dot 1s 160ms infinite ease-in-out" }} />
+                      <span className="w-1 h-1 rounded-full bg-black" style={{ animation: "bounce-dot 1s 320ms infinite ease-in-out" }} />
+                    </span>
+                  ) : "Scan"}
                 </button>
               </form>
             </div>
@@ -641,7 +675,7 @@ export default function Home() {
             )}
 
             {/* Violations list */}
-            <div className="flex-1 overflow-y-auto">
+            <div ref={leftPanelListRef} className="flex-1 overflow-y-auto">
               {(["Quick win", "Moderate", "Complex"] as const).map((effortLevel) => {
                 const group = numberedViolations.filter((v) => v.effort === effortLevel);
                 if (group.length === 0) return null;
@@ -666,6 +700,7 @@ export default function Home() {
                       return (
                         <div
                           key={v.id}
+                          data-violation-id={v.id}
                           className={`violation-row border-b border-white/5 ${isActive ? config.activeBg : ""}`}
                         >
                           <div className="flex">
@@ -675,7 +710,10 @@ export default function Home() {
                               className="flex-1 text-left px-3 py-3"
                             >
                               <div className="flex items-start gap-2">
-                                <span className="flex-shrink-0 w-5 h-5 rounded-lg flex items-center justify-center text-xs font-bold mt-0.5 bg-black text-white ring-1 ring-white/20">
+                                <span
+                                  className="flex-shrink-0 w-5 h-5 rounded-lg flex items-center justify-center text-xs font-bold mt-0.5 bg-black text-white"
+                                  style={{ boxShadow: `0 0 0 1px ${config.stroke}66` }}
+                                >
                                   {v.num}
                                 </span>
                                 <div className="min-w-0 flex-1">
