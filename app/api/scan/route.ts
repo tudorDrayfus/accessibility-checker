@@ -29,7 +29,8 @@ export async function POST(req: NextRequest) {
     const translated = data.violations.map((v: any) => ({
       id: v.id,
       impact: v.impact,
-      nodes: v.nodes.length,
+      nodes: v.nodes,
+      boxes: v.boxes ?? [],
       ...translateViolation(v.id),
     }));
 
@@ -43,6 +44,9 @@ export async function POST(req: NextRequest) {
       violations: translated,
       total: translated.length,
       quickWins: translated.filter((v: any) => v.effort === "Quick win").length,
+      screenshot: data.screenshot,
+      pageWidth: data.pageWidth,
+      pageHeight: data.pageHeight,
     });
 
   } catch (error) {
