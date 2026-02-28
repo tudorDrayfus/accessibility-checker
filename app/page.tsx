@@ -135,17 +135,17 @@ function CanvasOverlay({
         const h = box.height * scaleY;
 
         if (isActive) {
-          ctx.fillStyle = `rgba(${r},${g},${b},0.18)`;
-          ctx.strokeStyle = config.stroke;
-          ctx.lineWidth = 2;
-        } else if (isAnyActive) {
-          ctx.fillStyle = "rgba(255,255,255,0.02)";
-          ctx.strokeStyle = "rgba(255,255,255,0.08)";
-          ctx.lineWidth = 1;
-        } else {
-          ctx.fillStyle = `rgba(${r},${g},${b},0.12)`;
-          ctx.strokeStyle = config.stroke;
+          ctx.fillStyle = `rgba(${r},${g},${b},0.2)`;
+          ctx.strokeStyle = `rgba(${r},${g},${b},0.9)`;
           ctx.lineWidth = 1.5;
+        } else if (isAnyActive) {
+          ctx.fillStyle = "rgba(255,255,255,0.01)";
+          ctx.strokeStyle = "rgba(255,255,255,0.12)";
+          ctx.lineWidth = 0.75;
+        } else {
+          ctx.fillStyle = `rgba(${r},${g},${b},0.08)`;
+          ctx.strokeStyle = `rgba(${r},${g},${b},0.5)`;
+          ctx.lineWidth = 1;
         }
 
         ctx.fillRect(x, y, w, h);
@@ -153,19 +153,23 @@ function CanvasOverlay({
 
         // Number badge on first box only
         if (i === 0) {
-          const badgeR = 7;
-          const bx = x + badgeR;
-          const by = y - badgeR;
-          const alpha = isAnyActive && !isActive ? 0.3 : 1;
+          const badgeR = 11;
+          const bx = x + badgeR + 2;
+          const by = y - badgeR + 2;
+          const alpha = isAnyActive && !isActive ? 0.55 : 1;
 
           ctx.globalAlpha = alpha;
+          // Shadow for depth
+          ctx.shadowColor = "rgba(0,0,0,0.6)";
+          ctx.shadowBlur = 4;
           ctx.beginPath();
           ctx.arc(bx, by, badgeR, 0, Math.PI * 2);
           ctx.fillStyle = config.stroke;
           ctx.fill();
+          ctx.shadowBlur = 0;
 
           ctx.fillStyle = "#0a0a0a";
-          ctx.font = `bold ${badgeR * 1.1}px DM Sans, sans-serif`;
+          ctx.font = `bold ${badgeR}px DM Sans, sans-serif`;
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
           ctx.fillText(String(v.num), bx, by + 0.5);
@@ -245,6 +249,25 @@ export default function Home() {
   const [pageHeight, setPageHeight] = useState(900);
   const [activeViolation, setActiveViolation] = useState<NumberedViolation | null>(null);
   const [hiddenEfforts, setHiddenEfforts] = useState<Set<string>>(new Set());
+  const rightPanelRef = useRef<HTMLDivElement>(null);
+  const screenshotRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll right panel when selected overlay is out of view
+  useEffect(() => {
+    if (!activeViolation || !rightPanelRef.current || !screenshotRef.current) return;
+    const box = activeViolation.boxes?.[0];
+    if (!box) return;
+    const panel = rightPanelRef.current;
+    const screenshot = screenshotRef.current;
+    const screenshotRect = screenshot.getBoundingClientRect();
+    const panelRect = panel.getBoundingClientRect();
+    const boxFraction = box.y / pageHeight;
+    const boxYInContent = screenshotRect.top - panelRect.top + panel.scrollTop + boxFraction * screenshotRect.height;
+    const isInView = boxYInContent >= panel.scrollTop && boxYInContent <= panel.scrollTop + panel.clientHeight;
+    if (!isInView) {
+      panel.scrollTo({ top: Math.max(0, boxYInContent - panel.clientHeight * 0.35), behavior: "smooth" });
+    }
+  }, [activeViolation, pageHeight]);
 
   function getFullUrl(input: string) {
     const trimmed = input.trim();
@@ -470,10 +493,10 @@ export default function Home() {
 
                 return (
                   <div key={effortLevel}>
-                    <div className="px-4 py-2 flex items-center justify-between sticky top-0 bg-[#111] border-b border-white/5 z-10">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-zinc-200 text-xs font-medium">{config.label}</span>
-                        <span className="text-zinc-500 text-xs">{config.sublabel}</span>
+                    <div className="px-4 py-3 flex items-center justify-between sticky top-0 bg-[#111] border-b border-white/5 z-10">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-zinc-200 text-[11px] font-semibold uppercase tracking-wider">{config.label}</span>
+                        <span className="text-zinc-500 text-[10px]">{config.sublabel}</span>
                       </div>
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${config.badge}`}>
                         {group.length}
@@ -496,7 +519,7 @@ export default function Home() {
                               className="flex-1 text-left px-3 py-3"
                             >
                               <div className="flex items-start gap-2">
-                                <span className={`flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold mt-0.5 ${config.numBg}`}>
+                                <span className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold mt-0.5 ${config.numBg}`}>
                                   {v.num}
                                 </span>
                                 <div className="min-w-0 flex-1">
@@ -507,7 +530,7 @@ export default function Home() {
                                     {v.category}{v.nodes > 1 ? ` · ${v.nodes} elements` : ""}
                                   </p>
                                 </div>
-                                <span className={`chevron text-zinc-500 flex-shrink-0 text-sm leading-none mt-0.5 ${isActive ? "open" : ""}`}>›</span>
+                                <span className={`chevron text-zinc-400 flex-shrink-0 text-[28px] leading-none -mt-1 ${isActive ? "open" : ""}`}>›</span>
                               </div>
 
                               {isActive && (
@@ -562,7 +585,7 @@ export default function Home() {
           </div>
 
           {/* RIGHT — visual */}
-          <div className="flex-1 overflow-auto bg-[#0d0d0d] p-6">
+          <div ref={rightPanelRef} className="flex-1 overflow-auto bg-[#0d0d0d] p-6">
 
             {/* Legend / toggle */}
             <div className="flex items-center gap-2 mb-4 flex-wrap">
@@ -577,7 +600,7 @@ export default function Home() {
                     onClick={() => toggleEffort(e)}
                     className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all text-xs ${
                       isHidden
-                        ? "border-white/5 bg-transparent text-zinc-600"
+                        ? "border-white/20 bg-white/[0.06] text-zinc-400"
                         : "border-white/10 bg-white/[0.04] text-zinc-300"
                     }`}
                   >
@@ -585,12 +608,12 @@ export default function Home() {
                       className="w-2.5 h-2.5 rounded-sm border flex-shrink-0 transition-all"
                       style={{
                         background: isHidden ? "transparent" : config.overlay,
-                        borderColor: isHidden ? "#333" : config.stroke,
+                        borderColor: isHidden ? "#666" : config.stroke,
                       }}
                     />
                     {config.label}
-                    <span className={isHidden ? "text-zinc-700" : "text-zinc-500"}>{count}</span>
-                    <span className="text-xs">{isHidden ? "○" : "●"}</span>
+                    <span className="text-zinc-500">{count}</span>
+                    {isHidden && <span className="text-zinc-400 text-[10px] font-medium ml-0.5">hidden</span>}
                   </button>
                 );
               })}
@@ -599,6 +622,7 @@ export default function Home() {
 
             {/* Screenshot + canvas overlay */}
             <div
+              ref={screenshotRef}
               className="relative w-full rounded-xl overflow-hidden border border-white/10 shadow-2xl"
               style={{ aspectRatio: `${pageWidth} / ${pageHeight}` }}
               onClick={() => setActiveViolation(null)}
