@@ -132,7 +132,7 @@ function UrlInput({
     }
   }
 
-  const showDropdown = open && suggestions.length > 0 && history.length > 0;
+  const showDropdown = open && value.trim().length > 0 && suggestions.length > 0;
 
   return (
     <div className="relative flex-1 min-w-0">
@@ -149,11 +149,6 @@ function UrlInput({
       />
       {showDropdown && (
         <div className="absolute z-30 left-0 right-0 top-full mt-1 bg-[#1c1c1c] border border-white/10 rounded-lg overflow-hidden shadow-2xl">
-          {!value.trim() && (
-            <div className="px-3 pt-2 pb-1">
-              <span className="text-zinc-500 text-[10px] uppercase tracking-wider font-semibold">Recent</span>
-            </div>
-          )}
           {suggestions.map((url) => (
             <button
               key={url}
@@ -254,9 +249,9 @@ function CanvasOverlay({
           ctx.strokeStyle = "rgba(255,255,255,0.08)";
           ctx.lineWidth = 0.5;
         } else {
-          ctx.fillStyle = `rgba(${r},${g},${b},0.04)`;
-          ctx.strokeStyle = `rgba(${r},${g},${b},0.22)`;
-          ctx.lineWidth = 0.75;
+          ctx.fillStyle = `rgba(${r},${g},${b},0.09)`;
+          ctx.strokeStyle = `rgba(${r},${g},${b},0.45)`;
+          ctx.lineWidth = 1;
         }
 
         ctx.fillRect(x, y, w, h);
@@ -271,22 +266,22 @@ function CanvasOverlay({
 
           ctx.globalAlpha = alpha;
 
-          // Semi-transparent fill (matches list's bg-color/20)
-          ctx.shadowColor = "rgba(0,0,0,0.5)";
-          ctx.shadowBlur = 5;
+          // Black fill with subtle drop shadow
+          ctx.shadowColor = "rgba(0,0,0,0.6)";
+          ctx.shadowBlur = 6;
           ctx.beginPath();
           ctx.arc(bx, by, badgeR, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(${r},${g},${b},0.22)`;
+          ctx.fillStyle = "rgba(0,0,0,0.88)";
           ctx.fill();
 
-          // Accent border
+          // Accent-colored border
           ctx.shadowBlur = 0;
-          ctx.strokeStyle = `rgba(${r},${g},${b},0.55)`;
-          ctx.lineWidth = 1;
+          ctx.strokeStyle = `rgba(${r},${g},${b},0.7)`;
+          ctx.lineWidth = 1.5;
           ctx.stroke();
 
-          // Number in accent color (matches list's text-color-300)
-          ctx.fillStyle = `rgba(${r},${g},${b},1)`;
+          // White number
+          ctx.fillStyle = "#ffffff";
           ctx.font = `bold ${badgeR}px DM Sans, sans-serif`;
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
@@ -680,7 +675,7 @@ export default function Home() {
                               className="flex-1 text-left px-3 py-3"
                             >
                               <div className="flex items-start gap-2">
-                                <span className={`flex-shrink-0 w-5 h-5 rounded-lg flex items-center justify-center text-xs font-bold mt-0.5 ${config.numBg}`}>
+                                <span className="flex-shrink-0 w-5 h-5 rounded-lg flex items-center justify-center text-xs font-bold mt-0.5 bg-black text-white ring-1 ring-white/20">
                                   {v.num}
                                 </span>
                                 <div className="min-w-0 flex-1">
