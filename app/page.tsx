@@ -251,7 +251,7 @@ function CanvasOverlay({
       const isActive = activeViolation?.id === v.id;
       // idle: slight reveal so areas stand out without colour
       // active: full reveal for selected, near-invisible for others
-      ctx.globalAlpha = isActive ? 1 : 0.40;
+      ctx.globalAlpha = isActive ? 1 : 0.75;
       for (const box of v.boxes ?? []) {
         const x = box.x * scaleX;
         const y = box.y * scaleY;
@@ -265,9 +265,11 @@ function CanvasOverlay({
     ctx.globalCompositeOperation = "source-over";
     ctx.globalAlpha = 1;
 
-    // ── Pass 3: number badges only (no strokes) ───────────────────────────
+    // ── Pass 3: number badges ─────────────────────────────────────────────
     for (const v of violations) {
       if (hiddenEfforts.has(v.effort)) continue;
+      const config = effortConfig[v.effort];
+      const [r, g, b] = config.strokeRgb;
       const box = (v.boxes ?? [])[0];
       if (!box) continue;
 
@@ -278,16 +280,13 @@ function CanvasOverlay({
       const by = y - badgeR + 2;
 
       ctx.globalAlpha = 1;
-      ctx.shadowColor = "rgba(0,0,0,0.7)";
-      ctx.shadowBlur = 6;
       ctx.beginPath();
       ctx.arc(bx, by, badgeR, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(0,0,0,0.9)";
+      ctx.fillStyle = `rgb(${r},${g},${b})`;
       ctx.fill();
 
-      ctx.shadowBlur = 0;
-
-      ctx.fillStyle = "#ffffff";
+      // Dark text — readable on all three effort colors
+      ctx.fillStyle = "rgba(0,0,0,0.85)";
       ctx.font = `bold ${badgeR}px DM Sans, sans-serif`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
@@ -840,7 +839,7 @@ export default function Home() {
             {/* Screenshot + canvas overlay */}
             <div
               ref={screenshotRef}
-              className="relative w-full rounded-lg overflow-hidden border border-white/10 shadow-2xl"
+              className="relative w-[85%] mx-auto rounded-lg overflow-hidden border border-white/10 shadow-2xl"
               style={{ aspectRatio: `${pageWidth} / ${pageHeight}` }}
               onClick={() => setActiveViolation(null)}
             >
