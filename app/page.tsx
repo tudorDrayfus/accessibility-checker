@@ -238,7 +238,6 @@ function CanvasOverlay({
 
     const scaleX = W / pageWidth;
     const scaleY = H / pageHeight;
-    const isAnyActive = activeViolation !== null;
 
     // ── Pass 1: dark veil over entire screenshot ──────────────────────────
     ctx.globalCompositeOperation = "source-over";
@@ -269,19 +268,16 @@ function CanvasOverlay({
     // ── Pass 3: number badges only (no strokes) ───────────────────────────
     for (const v of violations) {
       if (hiddenEfforts.has(v.effort)) continue;
-      const config = effortConfig[v.effort];
-      const isActive = activeViolation?.id === v.id;
-      const [r, g, b] = config.strokeRgb;
       const box = (v.boxes ?? [])[0];
       if (!box) continue;
 
       const x = box.x * scaleX;
       const y = box.y * scaleY;
-      const badgeR = 11;
+      const badgeR = 22;
       const bx = x + badgeR + 2;
       const by = y - badgeR + 2;
 
-      ctx.globalAlpha = isAnyActive && !isActive ? 0.35 : 1;
+      ctx.globalAlpha = 1;
       ctx.shadowColor = "rgba(0,0,0,0.7)";
       ctx.shadowBlur = 6;
       ctx.beginPath();
@@ -290,9 +286,6 @@ function CanvasOverlay({
       ctx.fill();
 
       ctx.shadowBlur = 0;
-      ctx.strokeStyle = `rgba(${r},${g},${b},0.7)`;
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
 
       ctx.fillStyle = "#ffffff";
       ctx.font = `bold ${badgeR}px DM Sans, sans-serif`;
