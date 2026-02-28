@@ -28,15 +28,15 @@ const effortConfig = {
   "Quick win": {
     label: "Quick Wins",
     sublabel: "Fix these today",
-    badge: "bg-emerald-500/10 text-emerald-400",
-    overlay: "rgba(27, 59, 47, 0.15)",
-    stroke: "#093324",
-    strokeRgb: [52, 211, 153],
-    activeBg: "bg-emerald-500/10",
-    accentBar: "bg-emerald-400",
-    numBg: "bg-emerald-500/20 text-emerald-300",
-    badgeFill: "rgb(168, 213, 193)",   // sage pastel
-    badgeStroke: "rgb(108, 166, 142)", // deeper sage
+    badge: "bg-blue-500/10 text-blue-400",
+    overlay: "rgba(29, 78, 216, 0.12)",
+    stroke: "#1e3a8a",
+    strokeRgb: [96, 165, 250],
+    activeBg: "bg-blue-500/10",
+    accentBar: "bg-blue-400",
+    numBg: "bg-blue-500/20 text-blue-300",
+    badgeFill: "rgb(173, 210, 252)",   // sky blue pastel
+    badgeStroke: "rgb(110, 170, 235)", // medium blue
   },
   Moderate: {
     label: "Moderate Effort",
@@ -181,7 +181,7 @@ function CopyButton({ text }: { text: string }) {
         setCopied(true);
         setTimeout(() => setCopied(false), 1500);
       }}
-      className="flex items-center gap-1 text-zinc-400 hover:text-white transition text-xs"
+      className="flex items-center gap-1 text-zinc-400 hover:text-white transition text-sm"
     >
       <span className="text-xs">{copied ? "✓" : "⎘"}</span>
       <span>{copied ? "Copied" : "Copy"}</span>
@@ -280,13 +280,13 @@ function CanvasOverlay({
 
       const x = box.x * scaleX;
       const y = box.y * scaleY;
-      const badgeR = 12;
-      const bx = x + badgeR + 2;
-      const by = y - badgeR + 2;
+      const badgeSize = 22;
+      const bx = x + badgeSize / 2 + 2;
+      const by = y - badgeSize / 2 + 2;
 
       ctx.globalAlpha = 1;
       ctx.beginPath();
-      ctx.arc(bx, by, badgeR, 0, Math.PI * 2);
+      ctx.roundRect(bx - badgeSize / 2, by - badgeSize / 2, badgeSize, badgeSize, 7);
       ctx.fillStyle = config.badgeFill;
       ctx.fill();
       ctx.strokeStyle = config.badgeStroke;
@@ -294,7 +294,7 @@ function CanvasOverlay({
       ctx.stroke();
 
       ctx.fillStyle = "rgb(18, 18, 18)";
-      ctx.font = "bold 12px DM Sans, SemiBold 600, sans-serif";
+      ctx.font = "bold 11px DM Sans, sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(String(v.num), bx, by + 0.5);
@@ -627,7 +627,7 @@ export default function Home() {
           )}
 
           {/* LEFT PANEL */}
-          <div className="w-[300px] flex-shrink-0 bg-[#111] border-r border-white/8 flex flex-col h-full">
+          <div className="w-[360px] flex-shrink-0 bg-[#111] border-r border-white/8 flex flex-col h-full">
 
             {/* Rescan */}
             <div className="px-3 py-3 border-b border-white/8">
@@ -637,12 +637,12 @@ export default function Home() {
                   onChange={setDomain}
                   history={urlHistory}
                   placeholder="Enter URL"
-                  inputClassName="w-full bg-white/5 text-white border border-white/15 rounded-lg px-3 py-2 text-xs outline-none focus:border-white/40 transition placeholder-zinc-500"
+                  inputClassName="w-full bg-white/5 text-white border border-white/15 rounded-lg px-3 py-2 text-sm outline-none focus:border-white/40 transition placeholder-zinc-500"
                 />
                 <button
                   type="submit"
                   disabled={loading}
-                  className={`font-semibold px-3 py-2 rounded-lg transition text-xs whitespace-nowrap flex-shrink-0 ${loading ? "bg-zinc-800 text-white cursor-default" : "bg-white text-black hover:bg-zinc-100 disabled:opacity-40"}`}
+                  className={`font-semibold px-3 py-2 rounded-lg transition text-sm whitespace-nowrap flex-shrink-0 ${loading ? "bg-zinc-800 text-white cursor-default" : "bg-white text-black hover:bg-zinc-100 disabled:opacity-40"}`}
                 >
                   {loading ? (
                     <span className="flex gap-[3px] items-center px-0.5">
@@ -661,7 +661,7 @@ export default function Home() {
                 <p className="text-white text-3xl font-light leading-none" style={{ fontFamily: "'DM Serif Display', serif" }}>
                   {total} issues
                 </p>
-                <p className="text-zinc-400 text-xs truncate max-w-[170px] mt-0.5">{scannedUrl}</p>
+                <p className="text-zinc-400 text-sm truncate max-w-[220px] mt-0.5">{scannedUrl}</p>
               </div>
               <div className="relative w-12 h-12 flex-shrink-0">
                 <svg width="48" height="48" viewBox="0 0 48 48">
@@ -690,7 +690,7 @@ export default function Home() {
 
             {error && (
               <div className="mx-3 my-2 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
-                <p className="text-red-300 text-xs">{error}</p>
+                <p className="text-red-300 text-sm">{error}</p>
               </div>
             )}
 
@@ -705,10 +705,10 @@ export default function Home() {
                   <div key={effortLevel}>
                     <div className="px-4 py-3 flex items-center justify-between sticky top-0 bg-[#111] border-b border-white/5 z-10">
                       <div className="flex flex-col gap-0.5">
-                        <span className="text-zinc-200 text-xs font-semibold uppercase tracking-wider">{config.label}</span>
-                        <span className="text-zinc-400 text-xs">{config.sublabel}</span>
+                        <span className="text-zinc-200 text-sm font-semibold uppercase tracking-wider">{config.label}</span>
+                        <span className="text-zinc-400 text-sm">{config.sublabel}</span>
                       </div>
-                      <span className={`text-xs px-2 py-0.5 rounded-lg font-medium ${config.badge}`}>
+                      <span className={`text-sm px-2 py-0.5 rounded-lg font-medium ${config.badge}`}>
                         {group.length}
                       </span>
                     </div>
@@ -737,10 +737,10 @@ export default function Home() {
                                   {v.num}
                                 </span>
                                 <div className="min-w-0 flex-1">
-                                  <p className={`text-xs font-medium leading-snug ${isActive ? "text-white" : "text-zinc-200"}`}>
+                                  <p className={`text-sm font-medium leading-snug ${isActive ? "text-white" : "text-zinc-200"}`}>
                                     {v.title}
                                   </p>
-                                  <p className="text-zinc-400 text-xs mt-0.5">
+                                  <p className="text-zinc-400 text-sm mt-0.5">
                                     {v.category}{v.nodes > 1 ? ` · ${v.nodes} elements` : ""}
                                   </p>
                                 </div>
@@ -749,21 +749,21 @@ export default function Home() {
 
                               {isActive && (
                                 <div className="mt-3 ml-6 select-text" onClick={(e) => e.stopPropagation()}>
-                                  <p className="text-zinc-300 text-xs leading-relaxed mb-3">{v.why}</p>
+                                  <p className="text-zinc-300 text-sm leading-relaxed mb-3">{v.why}</p>
                                   <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-lg px-3 py-3">
                                     <div className="flex items-center justify-between mb-2">
-                                      <span className="text-emerald-300 text-xs font-semibold uppercase tracking-wider">How to fix</span>
+                                      <span className="text-emerald-300 text-sm font-semibold uppercase tracking-wider">How to fix</span>
                                       <CopyButton text={copyText} />
                                     </div>
-                                    <p className="text-zinc-200 text-xs leading-relaxed">{v.fix}</p>
+                                    <p className="text-zinc-200 text-sm leading-relaxed">{v.fix}</p>
                                   </div>
                                   <div className="flex items-center justify-between mt-2">
-                                    <p className="text-zinc-400 text-xs">Effort: {v.effortTime}</p>
+                                    <p className="text-zinc-400 text-sm">Effort: {v.effortTime}</p>
                                     <a
                                       href={v.wcagUrl}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="text-zinc-300 hover:text-white transition text-xs underline underline-offset-2"
+                                      className="text-zinc-300 hover:text-white transition text-sm underline underline-offset-2"
                                       onClick={(e) => e.stopPropagation()}
                                     >
                                       WCAG guideline
@@ -805,7 +805,7 @@ export default function Home() {
             <div className="flex items-center gap-2 mb-4 flex-wrap">
               <button
                 onClick={() => setShowCanvas((v) => !v)}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all text-xs ${
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all text-sm ${
                   showCanvas
                     ? "border-white/20 bg-white/[0.08] text-zinc-200"
                     : "border-white/10 bg-white/[0.03] text-zinc-500"
@@ -823,7 +823,7 @@ export default function Home() {
                   <button
                     key={e}
                     onClick={() => toggleEffort(e)}
-                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all text-xs ${
+                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all text-sm ${
                       isHidden
                         ? "border-white/10 bg-white/[0.02] text-zinc-600"
                         : "border-white/10 bg-white/[0.04] text-zinc-300"
@@ -846,7 +846,7 @@ export default function Home() {
             {/* Screenshot + canvas overlay */}
             <div
               ref={screenshotRef}
-              className="relative w-[85%] mx-auto rounded-lg overflow-hidden border border-white/10 shadow-2xl"
+              className="relative w-[75%] mx-auto rounded-lg overflow-hidden border border-white/10 shadow-2xl"
               style={{ aspectRatio: `${pageWidth} / ${pageHeight}` }}
               onClick={() => setActiveViolation(null)}
             >
