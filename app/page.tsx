@@ -611,7 +611,7 @@ export default function Home() {
                 <em className="text-zinc-400" style={{ fontStyle: "italic" }}>European Accessibility Act?</em>
               </h1>
               <p className="text-zinc-300 text-base leading-relaxed max-w-md">
-                Paste any URL and get a clear list of accessibility fixes.
+                Paste any URL and get a list of quick wins and failures, fast..ish
               </p>
             </div>
 
@@ -794,7 +794,29 @@ export default function Home() {
             {/* Violations list */}
             <div ref={leftPanelListRef} className="flex-1 overflow-y-auto">
               {sortMode === "position" ? (
-                numberedViolations.map((v) => makeRow(v, true))
+                (() => {
+                  const withLoc = numberedViolations.filter((v) => v.boxes.length > 0);
+                  const noLoc = numberedViolations.filter((v) => v.boxes.length === 0);
+                  return (
+                    <>
+                      {withLoc.map((v) => makeRow(v, true))}
+                      {noLoc.length > 0 && (
+                        <>
+                          <div className="px-4 py-3 flex items-center justify-between sticky top-0 bg-[#111] border-b border-t border-white/5 z-10">
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-zinc-200 text-sm font-semibold uppercase tracking-wider">Page-level issues</span>
+                              <span className="text-zinc-400 text-sm">No specific element location</span>
+                            </div>
+                            <span className="text-sm px-2 py-0.5 rounded-lg font-medium bg-zinc-500/10 text-zinc-400">
+                              {noLoc.length}
+                            </span>
+                          </div>
+                          {noLoc.map((v) => makeRow(v, true))}
+                        </>
+                      )}
+                    </>
+                  );
+                })()
               ) : (
                 (["Quick win", "Moderate", "Complex"] as const).map((effortLevel) => {
                   const group = numberedViolations.filter((v) => v.effort === effortLevel);
