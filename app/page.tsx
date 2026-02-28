@@ -246,40 +246,47 @@ function CanvasOverlay({
         const h = box.height * scaleY;
 
         if (isActive) {
-          ctx.fillStyle = `rgba(${r},${g},${b},0.2)`;
-          ctx.strokeStyle = `rgba(${r},${g},${b},0.9)`;
+          ctx.fillStyle = `rgba(${r},${g},${b},0.15)`;
+          ctx.strokeStyle = `rgba(${r},${g},${b},0.75)`;
           ctx.lineWidth = 1.5;
         } else if (isAnyActive) {
-          ctx.fillStyle = "rgba(255,255,255,0.01)";
-          ctx.strokeStyle = "rgba(255,255,255,0.12)";
-          ctx.lineWidth = 0.75;
+          ctx.fillStyle = "rgba(255,255,255,0.005)";
+          ctx.strokeStyle = "rgba(255,255,255,0.08)";
+          ctx.lineWidth = 0.5;
         } else {
-          ctx.fillStyle = `rgba(${r},${g},${b},0.08)`;
-          ctx.strokeStyle = `rgba(${r},${g},${b},0.5)`;
-          ctx.lineWidth = 1;
+          ctx.fillStyle = `rgba(${r},${g},${b},0.04)`;
+          ctx.strokeStyle = `rgba(${r},${g},${b},0.22)`;
+          ctx.lineWidth = 0.75;
         }
 
         ctx.fillRect(x, y, w, h);
         ctx.strokeRect(x, y, w, h);
 
-        // Number badge on first box only
+        // Number badge on first box only — style matches the list panel badges
         if (i === 0) {
           const badgeR = 11;
           const bx = x + badgeR + 2;
           const by = y - badgeR + 2;
-          const alpha = isAnyActive && !isActive ? 0.55 : 1;
+          const alpha = isAnyActive && !isActive ? 0.45 : 1;
 
           ctx.globalAlpha = alpha;
-          // Shadow for depth
-          ctx.shadowColor = "rgba(0,0,0,0.6)";
-          ctx.shadowBlur = 4;
+
+          // Semi-transparent fill (matches list's bg-color/20)
+          ctx.shadowColor = "rgba(0,0,0,0.5)";
+          ctx.shadowBlur = 5;
           ctx.beginPath();
           ctx.arc(bx, by, badgeR, 0, Math.PI * 2);
-          ctx.fillStyle = config.stroke;
+          ctx.fillStyle = `rgba(${r},${g},${b},0.22)`;
           ctx.fill();
-          ctx.shadowBlur = 0;
 
-          ctx.fillStyle = "#0a0a0a";
+          // Accent border
+          ctx.shadowBlur = 0;
+          ctx.strokeStyle = `rgba(${r},${g},${b},0.55)`;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+
+          // Number in accent color (matches list's text-color-300)
+          ctx.fillStyle = `rgba(${r},${g},${b},1)`;
           ctx.font = `bold ${badgeR}px DM Sans, sans-serif`;
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
@@ -449,6 +456,8 @@ export default function Home() {
 
   const hasResults = total !== null && screenshot;
   const score = Math.max(0, 100 - (total ?? 0) * 5);
+  const scoreColor = score > 60 ? "#34d399" : score > 30 ? "#fbbf24" : "#f87171";
+  const scoreColorLight = score > 60 ? "#a7f3d0" : score > 30 ? "#fde68a" : "#fecaca";
   const numberedViolations: NumberedViolation[] = violations.map((v, i) => ({ ...v, num: i + 1 }));
 
   return (
@@ -477,13 +486,10 @@ export default function Home() {
         <div className="min-h-screen flex flex-col items-center justify-center px-4 py-16">
           <div className="w-full max-w-xl">
             <div className="mb-12 fade-up">
-              <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-1 mb-6">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 scanning-dot" />
-                <span className="text-xs text-zinc-300 tracking-wide">WCAG 2.1 AA — automated audit</span>
-              </div>
               <h1 className="text-white text-5xl mb-3 leading-tight" style={{ fontFamily: "'DM Serif Display', serif" }}>
-                Is your website<br />
-                <em className="text-zinc-400" style={{ fontStyle: "italic" }}>accessible?</em>
+                Is your website ready<br />
+                for the new<br />
+                <em className="text-zinc-400" style={{ fontStyle: "italic" }}>European Accessibility Act?</em>
               </h1>
               <p className="text-zinc-300 text-base leading-relaxed max-w-md">
                 Paste any URL and get a clear list of accessibility fixes.
@@ -603,20 +609,27 @@ export default function Home() {
             {/* Summary */}
             <div className="px-4 py-4 border-b border-white/8 flex items-center justify-between">
               <div>
-                <p className="text-white text-xl font-light" style={{ fontFamily: "'DM Serif Display', serif" }}>
+                <p className="text-white text-3xl font-light leading-none" style={{ fontFamily: "'DM Serif Display', serif" }}>
                   {total} issues
                 </p>
                 <p className="text-zinc-400 text-xs truncate max-w-[170px] mt-0.5">{scannedUrl}</p>
               </div>
               <div className="relative w-12 h-12 flex-shrink-0">
                 <svg width="48" height="48" viewBox="0 0 48 48">
-                  <circle cx="24" cy="24" r="19" fill="none" stroke="#222" strokeWidth="3" />
+                  <defs>
+                    <linearGradient id="dialGrad" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stopColor={scoreColorLight} />
+                      <stop offset="100%" stopColor={scoreColor} />
+                    </linearGradient>
+                  </defs>
+                  <circle cx="24" cy="24" r="17" fill="none" stroke="#1e1e1e" strokeWidth="6" />
                   <circle
-                    cx="24" cy="24" r="19"
+                    cx="24" cy="24" r="17"
                     fill="none"
-                    stroke={score > 60 ? "#34d399" : score > 30 ? "#fbbf24" : "#f87171"}
-                    strokeWidth="3"
-                    strokeDasharray={`${(score / 100) * 119.4} 119.4`}
+                    stroke="url(#dialGrad)"
+                    strokeWidth="6"
+                    strokeLinecap="round"
+                    strokeDasharray={`${(score / 100) * 106.8} 106.8`}
                     style={{ transform: "rotate(-90deg)", transformOrigin: "50% 50%" }}
                   />
                 </svg>
@@ -667,7 +680,7 @@ export default function Home() {
                               className="flex-1 text-left px-3 py-3"
                             >
                               <div className="flex items-start gap-2">
-                                <span className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold mt-0.5 ${config.numBg}`}>
+                                <span className={`flex-shrink-0 w-5 h-5 rounded-lg flex items-center justify-center text-xs font-bold mt-0.5 ${config.numBg}`}>
                                   {v.num}
                                 </span>
                                 <div className="min-w-0 flex-1">
