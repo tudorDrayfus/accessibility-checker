@@ -387,6 +387,9 @@ export default function Home() {
   const leftPanelListRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { setUrlHistory(loadHistory()); }, []);
+  useEffect(() => {
+    if (window.innerWidth < 768) setSortMode("impact");
+  }, []);
 
   function pushToHistory(url: string) {
     setUrlHistory((prev) => {
@@ -839,6 +842,11 @@ export default function Home() {
                 })
               )}
             </div>
+
+            {/* Mobile desktop prompt */}
+            <p className="md:hidden px-4 py-3 text-zinc-500 text-xs text-center border-t border-white/5 flex-shrink-0">
+              To see issues highlighted on the page, open on desktop.
+            </p>
 
             {/* Panel footer */}
             <div className="px-4 py-3 border-t border-white/8 flex items-center justify-between">
