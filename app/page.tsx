@@ -381,6 +381,7 @@ export default function Home() {
   const [hiddenEfforts, setHiddenEfforts] = useState<Set<string>>(new Set());
   const [showCanvas, setShowCanvas] = useState(true);
   const [urlHistory, setUrlHistory] = useState<string[]>([]);
+  const [sortMode, setSortMode] = useState<"position" | "impact">("position");
   const rightPanelRef = useRef<HTMLDivElement>(null);
   const screenshotRef = useRef<HTMLDivElement>(null);
   const leftPanelListRef = useRef<HTMLDivElement>(null);
@@ -496,7 +497,85 @@ export default function Home() {
   const score = Math.max(0, 100 - (total ?? 0) * 5);
   const scoreColor = score > 60 ? "rgb(26, 128, 90)" : score > 30 ? "#c8854a" : "#f87171";
   const scoreColorLight = score > 60 ? "#377b5b" : score > 30 ? "#d68454" : "#e95b5b";
-  const numberedViolations: NumberedViolation[] = violations.map((v, i) => ({ ...v, num: i + 1 }));
+  const numberedViolations = useMemo<NumberedViolation[]>(() => {
+    if (sortMode === "position") {
+      return [...violations]
+        .sort((a, b) => (a.boxes[0]?.y ?? 999999) - (b.boxes[0]?.y ?? 999999))
+        .map((v, i) => ({ ...v, num: i + 1 }));
+    }
+    return violations.map((v, i) => ({ ...v, num: i + 1 }));
+  }, [violations, sortMode]);
+
+  const makeRow = (v: NumberedViolation, showEffortPill: boolean) => {
+    const isActive = activeViolation?.id === v.id;
+    const config = effortConfig[v.effort];
+    const copyText = `${v.title}\n\nWhy it matters:\n${v.why}\n\nHow to fix:\n${v.fix}\n\nEstimated effort: ${v.effortTime}\nWCAG reference: ${v.wcagUrl}`;
+    return (
+      <div
+        key={v.id}
+        data-violation-id={v.id}
+        className={`violation-row border-b border-white/5 ${isActive ? config.activeBg : ""}`}
+      >
+        <div className="flex">
+          <div className={`w-0.5 flex-shrink-0 ${isActive ? config.accentBar : "bg-transparent"}`} />
+          <button
+            onClick={() => setActiveViolation(isActive ? null : v)}
+            className="flex-1 text-left px-3 py-3"
+          >
+            <div className="flex items-start gap-2">
+              <span
+                className="flex-shrink-0 w-5 h-5 rounded-lg flex items-center justify-center text-xs font-bold mt-0.5 bg-black text-white"
+                style={{ boxShadow: `0 0 0 1px ${config.stroke}66` }}
+              >
+                {v.num}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className={`text-sm font-medium leading-snug ${isActive ? "text-white" : "text-zinc-200"}`}>
+                  {v.title}
+                </p>
+                <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                  <span className="text-zinc-400 text-sm">
+                    {v.category}{v.nodes > 1 ? ` · ${v.nodes} elements` : ""}
+                  </span>
+                  {showEffortPill && (
+                    <span className={`text-xs px-1.5 py-0.5 rounded font-medium leading-none ${config.badge}`}>
+                      {v.effort === "Quick win" ? "Quick" : v.effort}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <span className={`chevron text-zinc-400 flex-shrink-0 text-[28px] leading-none -mt-1 ${isActive ? "open" : ""}`}>›</span>
+            </div>
+
+            {isActive && (
+              <div className="mt-3 ml-6 select-text" onClick={(e) => e.stopPropagation()}>
+                <p className="text-zinc-300 text-sm leading-relaxed mb-3">{v.why}</p>
+                <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-lg px-3 py-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-emerald-300 text-sm font-semibold uppercase tracking-wider">How to fix</span>
+                    <CopyButton text={copyText} />
+                  </div>
+                  <p className="text-zinc-200 text-sm leading-relaxed">{v.fix}</p>
+                </div>
+                <div className="flex items-center justify-between mt-2">
+                  <p className="text-zinc-400 text-sm">Effort: {v.effortTime}</p>
+                  <a
+                    href={v.wcagUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-zinc-300 hover:text-white transition text-sm underline underline-offset-2"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    WCAG guideline
+                  </a>
+                </div>
+              </div>
+            )}
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <main className="min-h-screen bg-[#0a0a0a]" style={{ fontFamily: "'DM Sans', sans-serif" }}>
@@ -694,91 +773,49 @@ export default function Home() {
               </div>
             )}
 
+            {/* Sort toggle */}
+            <div className="px-4 py-2 border-b border-white/8 flex items-center justify-between flex-shrink-0">
+              <span className="text-zinc-500 text-xs">Order by</span>
+              <div className="flex bg-white/[0.06] rounded-lg p-0.5">
+                {(["position", "impact"] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    onClick={() => setSortMode(mode)}
+                    className={`text-xs px-2.5 py-1 rounded-md transition-all ${
+                      sortMode === mode ? "bg-white/15 text-white" : "text-zinc-500 hover:text-zinc-300"
+                    }`}
+                  >
+                    {mode === "position" ? "Position" : "Impact"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Violations list */}
             <div ref={leftPanelListRef} className="flex-1 overflow-y-auto">
-              {(["Quick win", "Moderate", "Complex"] as const).map((effortLevel) => {
-                const group = numberedViolations.filter((v) => v.effort === effortLevel);
-                if (group.length === 0) return null;
-                const config = effortConfig[effortLevel];
-
-                return (
-                  <div key={effortLevel}>
-                    <div className="px-4 py-3 flex items-center justify-between sticky top-0 bg-[#111] border-b border-white/5 z-10">
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-zinc-200 text-sm font-semibold uppercase tracking-wider">{config.label}</span>
-                        <span className="text-zinc-400 text-sm">{config.sublabel}</span>
-                      </div>
-                      <span className={`text-sm px-2 py-0.5 rounded-lg font-medium ${config.badge}`}>
-                        {group.length}
-                      </span>
-                    </div>
-
-                    {group.map((v) => {
-                      const isActive = activeViolation?.id === v.id;
-                      const copyText = `${v.title}\n\nWhy it matters:\n${v.why}\n\nHow to fix:\n${v.fix}\n\nEstimated effort: ${v.effortTime}\nWCAG reference: ${v.wcagUrl}`;
-
-                      return (
-                        <div
-                          key={v.id}
-                          data-violation-id={v.id}
-                          className={`violation-row border-b border-white/5 ${isActive ? config.activeBg : ""}`}
-                        >
-                          <div className="flex">
-                            <div className={`w-0.5 flex-shrink-0 ${isActive ? config.accentBar : "bg-transparent"}`} />
-                            <button
-                              onClick={() => setActiveViolation(isActive ? null : v)}
-                              className="flex-1 text-left px-3 py-3"
-                            >
-                              <div className="flex items-start gap-2">
-                                <span
-                                  className="flex-shrink-0 w-5 h-5 rounded-lg flex items-center justify-center text-xs font-bold mt-0.5 bg-black text-white"
-                                  style={{ boxShadow: `0 0 0 1px ${config.stroke}66` }}
-                                >
-                                  {v.num}
-                                </span>
-                                <div className="min-w-0 flex-1">
-                                  <p className={`text-sm font-medium leading-snug ${isActive ? "text-white" : "text-zinc-200"}`}>
-                                    {v.title}
-                                  </p>
-                                  <p className="text-zinc-400 text-sm mt-0.5">
-                                    {v.category}{v.nodes > 1 ? ` · ${v.nodes} elements` : ""}
-                                  </p>
-                                </div>
-                                <span className={`chevron text-zinc-400 flex-shrink-0 text-[28px] leading-none -mt-1 ${isActive ? "open" : ""}`}>›</span>
-                              </div>
-
-                              {isActive && (
-                                <div className="mt-3 ml-6 select-text" onClick={(e) => e.stopPropagation()}>
-                                  <p className="text-zinc-300 text-sm leading-relaxed mb-3">{v.why}</p>
-                                  <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-lg px-3 py-3">
-                                    <div className="flex items-center justify-between mb-2">
-                                      <span className="text-emerald-300 text-sm font-semibold uppercase tracking-wider">How to fix</span>
-                                      <CopyButton text={copyText} />
-                                    </div>
-                                    <p className="text-zinc-200 text-sm leading-relaxed">{v.fix}</p>
-                                  </div>
-                                  <div className="flex items-center justify-between mt-2">
-                                    <p className="text-zinc-400 text-sm">Effort: {v.effortTime}</p>
-                                    <a
-                                      href={v.wcagUrl}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-zinc-300 hover:text-white transition text-sm underline underline-offset-2"
-                                      onClick={(e) => e.stopPropagation()}
-                                    >
-                                      WCAG guideline
-                                    </a>
-                                  </div>
-                                </div>
-                              )}
-                            </button>
-                          </div>
+              {sortMode === "position" ? (
+                numberedViolations.map((v) => makeRow(v, true))
+              ) : (
+                (["Quick win", "Moderate", "Complex"] as const).map((effortLevel) => {
+                  const group = numberedViolations.filter((v) => v.effort === effortLevel);
+                  if (group.length === 0) return null;
+                  const config = effortConfig[effortLevel];
+                  return (
+                    <div key={effortLevel}>
+                      <div className="px-4 py-3 flex items-center justify-between sticky top-0 bg-[#111] border-b border-white/5 z-10">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-zinc-200 text-sm font-semibold uppercase tracking-wider">{config.label}</span>
+                          <span className="text-zinc-400 text-sm">{config.sublabel}</span>
                         </div>
-                      );
-                    })}
-                  </div>
-                );
-              })}
+                        <span className={`text-sm px-2 py-0.5 rounded-lg font-medium ${config.badge}`}>
+                          {group.length}
+                        </span>
+                      </div>
+                      {group.map((v) => makeRow(v, false))}
+                    </div>
+                  );
+                })
+              )}
             </div>
 
             {/* Panel footer */}
