@@ -273,7 +273,7 @@ function CanvasOverlay({
 
       const x = box.x * scaleX;
       const y = box.y * scaleY;
-      const badgeR = 22;
+      const badgeR = 14;
       const bx = x + badgeR + 2;
       const by = y - badgeR + 2;
 
