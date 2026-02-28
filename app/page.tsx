@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 
 type Box = {
   x: number;
@@ -29,9 +29,9 @@ const effortConfig = {
     label: "Quick Wins",
     sublabel: "Fix these today",
     badge: "bg-emerald-500/10 text-emerald-400",
-    dot: "bg-emerald-400",
     overlay: "rgba(52, 211, 153, 0.15)",
     stroke: "#34d399",
+    strokeRgb: [52, 211, 153],
     activeBg: "bg-emerald-500/10",
     accentBar: "bg-emerald-400",
     numBg: "bg-emerald-500/20 text-emerald-300",
@@ -40,9 +40,9 @@ const effortConfig = {
     label: "Moderate Effort",
     sublabel: "Plan for next sprint",
     badge: "bg-yellow-500/10 text-yellow-400",
-    dot: "bg-yellow-400",
     overlay: "rgba(251, 191, 36, 0.15)",
     stroke: "#fbbf24",
+    strokeRgb: [251, 191, 36],
     activeBg: "bg-yellow-500/10",
     accentBar: "bg-yellow-400",
     numBg: "bg-yellow-500/20 text-yellow-300",
@@ -51,34 +51,14 @@ const effortConfig = {
     label: "Complex Fixes",
     sublabel: "Requires design + dev",
     badge: "bg-red-500/10 text-red-400",
-    dot: "bg-red-400",
     overlay: "rgba(248, 113, 113, 0.15)",
     stroke: "#f87171",
+    strokeRgb: [248, 113, 113],
     activeBg: "bg-red-500/10",
     accentBar: "bg-red-400",
     numBg: "bg-red-500/20 text-red-300",
   },
 };
-
-const ICONS: Record<string, string> = {
-  chevron_right: "›",
-  content_copy: "⎘",
-  check: "✓",
-  schedule: "◷",
-  verified: "✓",
-  feedback: "✉",
-  touch_app: "◉",
-  visibility: "◎",
-  visibility_off: "◌",
-};
-
-function MatIcon({ name, size = 16, className = "", style = {} }: { name: string; size?: number; className?: string; style?: React.CSSProperties }) {
-  return (
-    <span className={`select-none leading-none ${className}`} style={{ fontSize: size, lineHeight: 1, ...style }} aria-hidden="true">
-      {ICONS[name] ?? ""}
-    </span>
-  );
-}
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -92,9 +72,164 @@ function CopyButton({ text }: { text: string }) {
       }}
       className="flex items-center gap-1 text-zinc-400 hover:text-white transition text-xs"
     >
-      <MatIcon name={copied ? "check" : "content_copy"} size={13} />
+      <span className="text-xs">{copied ? "✓" : "⎘"}</span>
       <span>{copied ? "Copied" : "Copy"}</span>
     </button>
+  );
+}
+
+// Canvas overlay component — draws everything in one GPU layer
+function CanvasOverlay({
+  violations,
+  activeViolation,
+  hiddenEfforts,
+  pageWidth,
+  pageHeight,
+  onViolationClick,
+}: {
+  violations: NumberedViolation[];
+  activeViolation: NumberedViolation | null;
+  hiddenEfforts: Set<string>;
+  pageWidth: number;
+  pageHeight: number;
+  onViolationClick: (v: NumberedViolation | null) => void;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const draw = useCallback(() => {
+    const canvas = canvasRef.current;
+    const container = containerRef.current;
+    if (!canvas || !container) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    const rect = container.getBoundingClientRect();
+    const W = rect.width;
+    const H = rect.height;
+
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = `${W}px`;
+    canvas.style.height = `${H}px`;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, W, H);
+
+    const scaleX = W / pageWidth;
+    const scaleY = H / pageHeight;
+    const isAnyActive = activeViolation !== null;
+
+    for (const v of violations) {
+      if (hiddenEfforts.has(v.effort)) continue;
+      const config = effortConfig[v.effort];
+      const isActive = activeViolation?.id === v.id;
+      const [r, g, b] = config.strokeRgb;
+
+      for (let i = 0; i < (v.boxes ?? []).length; i++) {
+        const box = v.boxes[i];
+        const x = box.x * scaleX;
+        const y = box.y * scaleY;
+        const w = box.width * scaleX;
+        const h = box.height * scaleY;
+
+        if (isActive) {
+          ctx.fillStyle = `rgba(${r},${g},${b},0.18)`;
+          ctx.strokeStyle = config.stroke;
+          ctx.lineWidth = 2;
+        } else if (isAnyActive) {
+          ctx.fillStyle = "rgba(255,255,255,0.02)";
+          ctx.strokeStyle = "rgba(255,255,255,0.08)";
+          ctx.lineWidth = 1;
+        } else {
+          ctx.fillStyle = `rgba(${r},${g},${b},0.12)`;
+          ctx.strokeStyle = config.stroke;
+          ctx.lineWidth = 1.5;
+        }
+
+        ctx.fillRect(x, y, w, h);
+        ctx.strokeRect(x, y, w, h);
+
+        // Number badge on first box only
+        if (i === 0) {
+          const badgeR = 7;
+          const bx = x + badgeR;
+          const by = y - badgeR;
+          const alpha = isAnyActive && !isActive ? 0.3 : 1;
+
+          ctx.globalAlpha = alpha;
+          ctx.beginPath();
+          ctx.arc(bx, by, badgeR, 0, Math.PI * 2);
+          ctx.fillStyle = config.stroke;
+          ctx.fill();
+
+          ctx.fillStyle = "#0a0a0a";
+          ctx.font = `bold ${badgeR * 1.1}px DM Sans, sans-serif`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(String(v.num), bx, by + 0.5);
+          ctx.globalAlpha = 1;
+        }
+      }
+    }
+  }, [violations, activeViolation, hiddenEfforts, pageWidth, pageHeight]);
+
+  useEffect(() => {
+    draw();
+  }, [draw]);
+
+  useEffect(() => {
+    const ro = new ResizeObserver(() => draw());
+    if (containerRef.current) ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, [draw]);
+
+  function handleClick(e: React.MouseEvent<HTMLCanvasElement>) {
+    const canvas = canvasRef.current;
+    const container = containerRef.current;
+    if (!canvas || !container) return;
+
+    const rect = container.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const scaleX = rect.width / pageWidth;
+    const scaleY = rect.height / pageHeight;
+
+    // Find topmost non-hidden violation box at click position
+    let hit: NumberedViolation | null = null;
+    for (let vi = violations.length - 1; vi >= 0; vi--) {
+      const v = violations[vi];
+      if (hiddenEfforts.has(v.effort)) continue;
+      for (const box of v.boxes ?? []) {
+        const x = box.x * scaleX;
+        const y = box.y * scaleY;
+        const w = box.width * scaleX;
+        const h = box.height * scaleY;
+        if (mx >= x && mx <= x + w && my >= y && my <= y + h) {
+          hit = v;
+          break;
+        }
+      }
+      if (hit) break;
+    }
+
+    if (hit && hit.id === activeViolation?.id) {
+      onViolationClick(null);
+    } else {
+      onViolationClick(hit);
+    }
+  }
+
+  return (
+    <div ref={containerRef} className="absolute inset-0">
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 w-full h-full"
+        style={{ cursor: "crosshair" }}
+        onClick={handleClick}
+      />
+    </div>
   );
 }
 
@@ -110,7 +245,6 @@ export default function Home() {
   const [pageHeight, setPageHeight] = useState(900);
   const [activeViolation, setActiveViolation] = useState<NumberedViolation | null>(null);
   const [hiddenEfforts, setHiddenEfforts] = useState<Set<string>>(new Set());
-  const imageRef = useRef<HTMLDivElement>(null);
 
   function getFullUrl(input: string) {
     const trimmed = input.trim();
@@ -179,14 +313,11 @@ export default function Home() {
         .scanning-dot { animation: pulse-dot 1.2s infinite; }
         .violation-row { transition: background 0.12s; }
         .violation-row:hover { background: rgba(255,255,255,0.035); }
-        .overlay-box { cursor:pointer; transition:all 0.18s ease; position:absolute; }
-        .legend-pill { transition: opacity 0.15s, filter 0.15s; cursor: pointer; user-select: none; }
-        .legend-pill.off { opacity: 0.35; filter: saturate(0); }
+        .chevron { display:inline-block; transition: transform 0.2s ease; }
+        .chevron.open { transform: rotate(90deg); }
         ::-webkit-scrollbar { width:3px; }
         ::-webkit-scrollbar-track { background:transparent; }
         ::-webkit-scrollbar-thumb { background:#2a2a2a; }
-        .chevron { transition: transform 0.2s ease; }
-        .chevron.open { transform: rotate(90deg); }
       `}</style>
 
       {/* LANDING */}
@@ -304,7 +435,7 @@ export default function Home() {
               </form>
             </div>
 
-            {/* Summary — issues + dial only */}
+            {/* Summary */}
             <div className="px-4 py-4 border-b border-white/8 flex items-center justify-between">
               <div>
                 <p className="text-white text-xl font-light" style={{ fontFamily: "'DM Serif Display', serif" }}>
@@ -376,11 +507,7 @@ export default function Home() {
                                     {v.category}{v.nodes > 1 ? ` · ${v.nodes} elements` : ""}
                                   </p>
                                 </div>
-                                <MatIcon
-                                  name="chevron_right"
-                                  size={15}
-                                  className={`text-zinc-500 flex-shrink-0 chevron ${isActive ? "open" : ""}`}
-                                />
+                                <span className={`chevron text-zinc-500 flex-shrink-0 text-sm leading-none mt-0.5 ${isActive ? "open" : ""}`}>›</span>
                               </div>
 
                               {isActive && (
@@ -394,9 +521,7 @@ export default function Home() {
                                     <p className="text-zinc-200 text-xs leading-relaxed">{v.fix}</p>
                                   </div>
                                   <div className="flex items-center justify-between mt-2">
-                                    <p className="text-zinc-400 text-xs">
-                                      Effort: {v.effortTime}
-                                    </p>
+                                    <p className="text-zinc-400 text-xs">Effort: {v.effortTime}</p>
                                     <a
                                       href={v.wcagUrl}
                                       target="_blank"
@@ -422,16 +547,15 @@ export default function Home() {
             {/* Panel footer */}
             <div className="px-4 py-3 border-t border-white/8 flex items-center justify-between">
               <div className="flex items-center gap-1">
-                <MatIcon name="verified" size={12} className="text-zinc-400" />
+                <span className="text-zinc-400 text-xs">✓</span>
                 <span className="text-zinc-400 text-xs">WCAG 2.1 AA</span>
               </div>
               <a
                 href="https://www.linkedin.com/in/tudor-teisanu-7b08a4b2/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-zinc-300 hover:text-white transition text-xs flex items-center gap-1"
+                className="text-zinc-300 hover:text-white transition text-xs"
               >
-                <MatIcon name="feedback" size={12} className="text-zinc-400" />
                 Feedback
               </a>
             </div>
@@ -440,8 +564,8 @@ export default function Home() {
           {/* RIGHT — visual */}
           <div className="flex-1 overflow-auto bg-[#0d0d0d] p-6">
 
-            {/* Legend with toggle */}
-            <div className="flex items-center gap-3 mb-4 flex-wrap">
+            {/* Legend / toggle */}
+            <div className="flex items-center gap-2 mb-4 flex-wrap">
               {(["Quick win", "Moderate", "Complex"] as const).map((e) => {
                 const config = effortConfig[e];
                 const isHidden = hiddenEfforts.has(e);
@@ -451,42 +575,30 @@ export default function Home() {
                   <button
                     key={e}
                     onClick={() => toggleEffort(e)}
-                    className={`legend-pill flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition ${
+                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all text-xs ${
                       isHidden
-                        ? "border-white/5 bg-white/2"
-                        : "border-white/10 bg-white/[0.04]"
+                        ? "border-white/5 bg-transparent text-zinc-600"
+                        : "border-white/10 bg-white/[0.04] text-zinc-300"
                     }`}
                   >
                     <div
-                      className="w-2.5 h-2.5 rounded-sm border flex-shrink-0"
+                      className="w-2.5 h-2.5 rounded-sm border flex-shrink-0 transition-all"
                       style={{
                         background: isHidden ? "transparent" : config.overlay,
                         borderColor: isHidden ? "#333" : config.stroke,
                       }}
                     />
-                    <span className={`text-xs transition ${isHidden ? "text-zinc-600" : "text-zinc-300"}`}>
-                      {config.label}
-                    </span>
-                    <span className={`text-xs font-medium transition ${isHidden ? "text-zinc-700" : "text-zinc-400"}`}>
-                      {count}
-                    </span>
-                    <MatIcon
-                      name={isHidden ? "visibility_off" : "visibility"}
-                      size={12}
-                      className={isHidden ? "text-zinc-700" : "text-zinc-500"}
-                    />
+                    {config.label}
+                    <span className={isHidden ? "text-zinc-700" : "text-zinc-500"}>{count}</span>
+                    <span className="text-xs">{isHidden ? "○" : "●"}</span>
                   </button>
                 );
               })}
-              <span className="text-zinc-500 text-xs ml-auto flex items-center gap-1">
-                <MatIcon name="touch_app" size={12} className="text-zinc-600" />
-                Click highlights or list items to focus
-              </span>
+              <span className="text-zinc-600 text-xs ml-auto">Click to select · Click legend to hide</span>
             </div>
 
-            {/* Screenshot */}
+            {/* Screenshot + canvas overlay */}
             <div
-              ref={imageRef}
               className="relative w-full rounded-xl overflow-hidden border border-white/10 shadow-2xl"
               style={{ aspectRatio: `${pageWidth} / ${pageHeight}` }}
               onClick={() => setActiveViolation(null)}
@@ -495,54 +607,16 @@ export default function Home() {
                 src={`data:image/jpeg;base64,${screenshot}`}
                 alt="Page screenshot"
                 className="w-full h-full object-cover object-top"
+                style={{ display: "block" }}
               />
-
-              {numberedViolations.map((violation) => {
-                if (hiddenEfforts.has(violation.effort)) return null;
-                const config = effortConfig[violation.effort];
-                const isActive = activeViolation?.id === violation.id;
-                const isAnyActive = activeViolation !== null;
-
-                return (violation.boxes ?? []).map((box, boxIdx) => (
-                  <div
-                    key={`${violation.id}-${boxIdx}`}
-                    className="overlay-box"
-                    style={{
-                      left: `${(box.x / pageWidth) * 100}%`,
-                      top: `${(box.y / pageHeight) * 100}%`,
-                      width: `${(box.width / pageWidth) * 100}%`,
-                      height: `${(box.height / pageHeight) * 100}%`,
-                      background: isActive ? config.overlay : isAnyActive ? "rgba(255,255,255,0.02)" : config.overlay,
-                      border: `2px solid ${isActive ? config.stroke : isAnyActive ? "rgba(255,255,255,0.08)" : config.stroke}`,
-                      borderRadius: "2px",
-                      opacity: isAnyActive && !isActive ? 0.25 : 1,
-                      boxShadow: isActive ? `0 0 0 2px ${config.stroke}50` : "none",
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setActiveViolation(isActive ? null : violation);
-                    }}
-                  >
-                    {/* Number badge on overlay */}
-                    {boxIdx === 0 && (
-                      <span
-                        className="absolute top-0 left-0 flex items-center justify-center text-[8px] font-bold leading-none"
-                        style={{
-                          width: 14,
-                          height: 14,
-                          background: config.stroke,
-                          color: "#0a0a0a",
-                          borderRadius: "50%",
-                          transform: "translate(-50%, -50%)",
-                          zIndex: 10,
-                        }}
-                      >
-                        {violation.num}
-                      </span>
-                    )}
-                  </div>
-                ));
-              })}
+              <CanvasOverlay
+                violations={numberedViolations}
+                activeViolation={activeViolation}
+                hiddenEfforts={hiddenEfforts}
+                pageWidth={pageWidth}
+                pageHeight={pageHeight}
+                onViolationClick={setActiveViolation}
+              />
             </div>
 
             <p className="text-zinc-400 text-xs mt-3 text-center">
