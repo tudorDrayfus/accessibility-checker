@@ -227,6 +227,32 @@ function CanvasOverlay({
     const scaleY = H / pageHeight;
     const isAnyActive = activeViolation !== null;
 
+    // ── Pass 1: dark veil over entire screenshot ─────────────────────────
+    ctx.globalCompositeOperation = "source-over";
+    ctx.fillStyle = isAnyActive ? "rgba(0,0,0,0.78)" : "rgba(0,0,0,0.3)";
+    ctx.fillRect(0, 0, W, H);
+
+    // ── Pass 2: punch holes to reveal active violation areas ─────────────
+    if (isAnyActive) {
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.globalAlpha = 1;
+      for (const v of violations) {
+        if (hiddenEfforts.has(v.effort) || activeViolation?.id !== v.id) continue;
+        for (const box of v.boxes ?? []) {
+          const x = box.x * scaleX;
+          const y = box.y * scaleY;
+          const w = box.width * scaleX;
+          const h = box.height * scaleY;
+          ctx.beginPath();
+          ctx.roundRect(x, y, w, h, 4);
+          ctx.fill();
+        }
+      }
+      ctx.globalCompositeOperation = "source-over";
+      ctx.globalAlpha = 1;
+    }
+
+    // ── Pass 3: strokes + number badges ──────────────────────────────────
     for (const v of violations) {
       if (hiddenEfforts.has(v.effort)) continue;
       const config = effortConfig[v.effort];
@@ -241,34 +267,28 @@ function CanvasOverlay({
         const h = box.height * scaleY;
 
         if (isActive) {
-          ctx.fillStyle = `rgba(${r},${g},${b},0.15)`;
-          ctx.strokeStyle = `rgba(${r},${g},${b},0.75)`;
-          ctx.lineWidth = 1.5;
+          ctx.strokeStyle = `rgba(${r},${g},${b},0.9)`;
+          ctx.lineWidth = 2;
         } else if (isAnyActive) {
-          ctx.fillStyle = "rgba(255,255,255,0.005)";
-          ctx.strokeStyle = "rgba(255,255,255,0.08)";
-          ctx.lineWidth = 0.5;
+          ctx.strokeStyle = `rgba(${r},${g},${b},0.3)`;
+          ctx.lineWidth = 0.75;
         } else {
-          ctx.fillStyle = `rgba(${r},${g},${b},0.09)`;
-          ctx.strokeStyle = `rgba(${r},${g},${b},0.45)`;
+          ctx.strokeStyle = `rgba(${r},${g},${b},0.55)`;
           ctx.lineWidth = 1;
         }
 
         ctx.beginPath();
         ctx.roundRect(x, y, w, h, 4);
-        ctx.fill();
         ctx.stroke();
 
-        // Number badge on first box only — style matches the list panel badges
+        // Number badge on first box only
         if (i === 0) {
           const badgeR = 11;
           const bx = x + badgeR + 2;
           const by = y - badgeR + 2;
-          const alpha = isAnyActive && !isActive ? 0.45 : 1;
+          const alpha = isAnyActive && !isActive ? 0.4 : 1;
 
           ctx.globalAlpha = alpha;
-
-          // Black fill with subtle drop shadow
           ctx.shadowColor = "rgba(0,0,0,0.6)";
           ctx.shadowBlur = 6;
           ctx.beginPath();
@@ -276,13 +296,11 @@ function CanvasOverlay({
           ctx.fillStyle = "rgba(0,0,0,0.88)";
           ctx.fill();
 
-          // Accent-colored border
           ctx.shadowBlur = 0;
           ctx.strokeStyle = `rgba(${r},${g},${b},0.7)`;
           ctx.lineWidth = 1.5;
           ctx.stroke();
 
-          // White number
           ctx.fillStyle = "#ffffff";
           ctx.font = `bold ${badgeR}px DM Sans, sans-serif`;
           ctx.textAlign = "center";
@@ -330,6 +348,7 @@ function CanvasOverlay({
   }
 
   function handleClick(e: React.MouseEvent<HTMLCanvasElement>) {
+    e.stopPropagation();
     const container = containerRef.current;
     if (!container) return;
     const rect = container.getBoundingClientRect();
@@ -468,7 +487,7 @@ export default function Home() {
   const [scanMsgIdx, setScanMsgIdx] = useState(0);
   useEffect(() => {
     if (!loading) { setScanMsgIdx(0); return; }
-    const id = setInterval(() => setScanMsgIdx((i) => (i + 1) % SCAN_MESSAGES.length), 2000);
+    const id = setInterval(() => setScanMsgIdx((i) => (i + 1) % SCAN_MESSAGES.length), 5000);
     return () => clearInterval(id);
   }, [loading]);
 
@@ -528,14 +547,14 @@ export default function Home() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="bg-white text-black font-semibold px-7 py-4 rounded-lg hover:bg-zinc-100 transition disabled:opacity-40 text-sm whitespace-nowrap"
+                  className={`font-semibold px-7 py-4 rounded-lg transition text-sm whitespace-nowrap ${loading ? "bg-zinc-800 text-white cursor-default" : "bg-white text-black hover:bg-zinc-100 disabled:opacity-40"}`}
                 >
                   {loading ? (
                     <span className="flex items-center gap-2.5 min-w-[140px] justify-center">
                       <span className="flex gap-[3px] items-center">
-                        <span className="w-1 h-1 rounded-full bg-black" style={{ animation: "bounce-dot 1s 0ms infinite ease-in-out" }} />
-                        <span className="w-1 h-1 rounded-full bg-black" style={{ animation: "bounce-dot 1s 160ms infinite ease-in-out" }} />
-                        <span className="w-1 h-1 rounded-full bg-black" style={{ animation: "bounce-dot 1s 320ms infinite ease-in-out" }} />
+                        <span className="w-1 h-1 rounded-full bg-white" style={{ animation: "bounce-dot 1s 0ms infinite ease-in-out" }} />
+                        <span className="w-1 h-1 rounded-full bg-white" style={{ animation: "bounce-dot 1s 160ms infinite ease-in-out" }} />
+                        <span className="w-1 h-1 rounded-full bg-white" style={{ animation: "bounce-dot 1s 320ms infinite ease-in-out" }} />
                       </span>
                       <span key={scanMsgIdx} style={{ animation: "fade-msg 0.35s ease both" }}>
                         {SCAN_MESSAGES[scanMsgIdx]}
@@ -622,13 +641,13 @@ export default function Home() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="bg-white text-black font-semibold px-3 py-2 rounded-lg hover:bg-zinc-100 transition disabled:opacity-40 text-xs whitespace-nowrap flex-shrink-0"
+                  className={`font-semibold px-3 py-2 rounded-lg transition text-xs whitespace-nowrap flex-shrink-0 ${loading ? "bg-zinc-800 text-white cursor-default" : "bg-white text-black hover:bg-zinc-100 disabled:opacity-40"}`}
                 >
                   {loading ? (
                     <span className="flex gap-[3px] items-center px-0.5">
-                      <span className="w-1 h-1 rounded-full bg-black" style={{ animation: "bounce-dot 1s 0ms infinite ease-in-out" }} />
-                      <span className="w-1 h-1 rounded-full bg-black" style={{ animation: "bounce-dot 1s 160ms infinite ease-in-out" }} />
-                      <span className="w-1 h-1 rounded-full bg-black" style={{ animation: "bounce-dot 1s 320ms infinite ease-in-out" }} />
+                      <span className="w-1 h-1 rounded-full bg-white" style={{ animation: "bounce-dot 1s 0ms infinite ease-in-out" }} />
+                      <span className="w-1 h-1 rounded-full bg-white" style={{ animation: "bounce-dot 1s 160ms infinite ease-in-out" }} />
+                      <span className="w-1 h-1 rounded-full bg-white" style={{ animation: "bounce-dot 1s 320ms infinite ease-in-out" }} />
                     </span>
                   ) : "Scan"}
                 </button>
@@ -827,8 +846,6 @@ export default function Home() {
                 className="w-full h-full object-cover object-top"
                 style={{ display: "block" }}
               />
-              {/* Dark tint to make colored overlays pop */}
-              <div className="absolute inset-0 bg-black/35 pointer-events-none" />
               <CanvasOverlay
                 violations={numberedViolations}
                 activeViolation={activeViolation}
