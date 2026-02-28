@@ -190,6 +190,7 @@ function CanvasOverlay({
   hiddenEfforts,
   pageWidth,
   pageHeight,
+  showCanvas,
   onViolationClick,
 }: {
   violations: NumberedViolation[];
@@ -197,6 +198,7 @@ function CanvasOverlay({
   hiddenEfforts: Set<string>;
   pageWidth: number;
   pageHeight: number;
+  showCanvas: boolean;
   onViolationClick: (v: NumberedViolation | null) => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -207,6 +209,17 @@ function CanvasOverlay({
     const canvas = canvasRef.current;
     const container = containerRef.current;
     if (!canvas || !container) return;
+    if (!showCanvas) {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = container.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      canvas.style.width = `${rect.width}px`;
+      canvas.style.height = `${rect.height}px`;
+      const ctx = canvas.getContext("2d");
+      if (ctx) ctx.clearRect(0, 0, rect.width, rect.height);
+      return;
+    }
 
     const dpr = window.devicePixelRatio || 1;
     const rect = container.getBoundingClientRect();
@@ -229,7 +242,7 @@ function CanvasOverlay({
 
     // ── Pass 1: dark veil over entire screenshot ──────────────────────────
     ctx.globalCompositeOperation = "source-over";
-    ctx.fillStyle = isAnyActive ? "rgba(0,0,0,0.82)" : "rgba(0,0,0,0.55)";
+    ctx.fillStyle = "rgba(0,0,0,0.40)";
     ctx.fillRect(0, 0, W, H);
 
     // ── Pass 2: punch holes — fully reveal selected, subtly reveal others ─
@@ -288,7 +301,7 @@ function CanvasOverlay({
       ctx.fillText(String(v.num), bx, by + 0.5);
       ctx.globalAlpha = 1;
     }
-  }, [violations, activeViolation, hiddenEfforts, pageWidth, pageHeight]);
+  }, [violations, activeViolation, hiddenEfforts, pageWidth, pageHeight, showCanvas]);
 
   useEffect(() => {
     draw();
@@ -327,6 +340,7 @@ function CanvasOverlay({
 
   function handleClick(e: React.MouseEvent<HTMLCanvasElement>) {
     e.stopPropagation();
+    if (!showCanvas) return;
     const container = containerRef.current;
     if (!container) return;
     const rect = container.getBoundingClientRect();
@@ -366,6 +380,7 @@ export default function Home() {
   const [pageHeight, setPageHeight] = useState(900);
   const [activeViolation, setActiveViolation] = useState<NumberedViolation | null>(null);
   const [hiddenEfforts, setHiddenEfforts] = useState<Set<string>>(new Set());
+  const [showCanvas, setShowCanvas] = useState(true);
   const [urlHistory, setUrlHistory] = useState<string[]>([]);
   const rightPanelRef = useRef<HTMLDivElement>(null);
   const screenshotRef = useRef<HTMLDivElement>(null);
@@ -789,6 +804,17 @@ export default function Home() {
 
             {/* Legend / toggle */}
             <div className="flex items-center gap-2 mb-4 flex-wrap">
+              <button
+                onClick={() => setShowCanvas((v) => !v)}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all text-xs ${
+                  showCanvas
+                    ? "border-white/20 bg-white/[0.08] text-zinc-200"
+                    : "border-white/10 bg-white/[0.03] text-zinc-500"
+                }`}
+              >
+                <div className={`w-2.5 h-2.5 rounded-sm border flex-shrink-0 transition-all ${showCanvas ? "bg-white/30 border-white/50" : "bg-transparent border-zinc-600"}`} />
+                {showCanvas ? "Overlays on" : "Overlays off"}
+              </button>
               {(["Quick win", "Moderate", "Complex"] as const).map((e) => {
                 const config = effortConfig[e];
                 const isHidden = hiddenEfforts.has(e);
@@ -800,7 +826,7 @@ export default function Home() {
                     onClick={() => toggleEffort(e)}
                     className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all text-xs ${
                       isHidden
-                        ? "border-white/20 bg-white/[0.06] text-zinc-400"
+                        ? "border-white/10 bg-white/[0.02] text-zinc-600"
                         : "border-white/10 bg-white/[0.04] text-zinc-300"
                     }`}
                   >
@@ -808,16 +834,14 @@ export default function Home() {
                       className="w-2.5 h-2.5 rounded-sm border flex-shrink-0 transition-all"
                       style={{
                         background: isHidden ? "transparent" : config.overlay,
-                        borderColor: isHidden ? "#666" : config.stroke,
+                        borderColor: isHidden ? "#444" : config.stroke,
                       }}
                     />
                     {config.label}
-                    <span className="text-zinc-400">{count}</span>
-                    {isHidden && <span className="text-zinc-400 text-xs font-medium ml-0.5">hidden</span>}
+                    <span className={isHidden ? "text-zinc-600" : "text-zinc-400"}>{count}</span>
                   </button>
                 );
               })}
-              <span className="text-zinc-400 text-xs ml-auto">Click to select · Click legend to hide</span>
             </div>
 
             {/* Screenshot + canvas overlay */}
@@ -839,6 +863,7 @@ export default function Home() {
                 hiddenEfforts={hiddenEfforts}
                 pageWidth={pageWidth}
                 pageHeight={pageHeight}
+                showCanvas={showCanvas}
                 onViolationClick={setActiveViolation}
               />
             </div>
