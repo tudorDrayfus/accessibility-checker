@@ -280,7 +280,7 @@ function CanvasOverlay({
 
       const x = box.x * scaleX;
       const y = box.y * scaleY;
-      const badgeR = 11;
+      const badgeR = 14;
       const bx = x + badgeR + 2;
       const by = y - badgeR + 2;
 
@@ -494,8 +494,8 @@ export default function Home() {
 
   const hasResults = total !== null && screenshot;
   const score = Math.max(0, 100 - (total ?? 0) * 5);
-  const scoreColor = score > 60 ? "#34d399" : score > 30 ? "#fbbf24" : "#f87171";
-  const scoreColorLight = score > 60 ? "#a7f3d0" : score > 30 ? "#fde68a" : "#fecaca";
+  const scoreColor = score > 60 ? "rgb(26, 128, 90)" : score > 30 ? "#c8854a" : "#f87171";
+  const scoreColorLight = score > 60 ? "#377b5b" : score > 30 ? "#d68454" : "#e95b5b";
   const numberedViolations: NumberedViolation[] = violations.map((v, i) => ({ ...v, num: i + 1 }));
 
   return (
