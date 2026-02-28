@@ -257,10 +257,10 @@ function CanvasOverlay({
       const isActive = activeViolation?.id === v.id;
       // idle: slight reveal so areas stand out without colour
       // active: full reveal for selected, near-invisible for others
-      ctx.globalAlpha = isActive ? 1 : 1;
+      ctx.globalAlpha = isActive ? 0.5 : 1;
       for (const box of v.boxes ?? []) {
         const x = box.x * scaleX;
-        const y = box.y * scaleY;
+        const y = (box.y * scaleY) + 20;
         const w = box.width * scaleX;
         const h = box.height * scaleY;
         ctx.beginPath();
