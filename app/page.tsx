@@ -247,7 +247,7 @@ function CanvasOverlay({
 
     // ── Pass 1: dark veil over entire screenshot ──────────────────────────
     ctx.globalCompositeOperation = "source-over";
-    ctx.fillStyle = "rgba(0,0,0,0.60)";
+    ctx.fillStyle = "rgba(0,0,0,0.70)";
     ctx.fillRect(0, 0, W, H);
 
     // ── Pass 2: punch holes — fully reveal selected, subtly reveal others ─
@@ -260,7 +260,7 @@ function CanvasOverlay({
       ctx.globalAlpha = isActive ? 1 : 0.6;
       for (const box of v.boxes ?? []) {
         const x = box.x * scaleX;
-        const y = (box.y * scaleY) + 20;
+        const y = (box.y * scaleY) + 5;
         const w = box.width * scaleX;
         const h = box.height * scaleY;
         ctx.beginPath();
@@ -280,7 +280,7 @@ function CanvasOverlay({
 
       const x = box.x * scaleX;
       const y = box.y * scaleY;
-      const badgeR = 14;
+      const badgeR = 12;
       const bx = x + badgeR + 2;
       const by = y - badgeR + 2;
 
@@ -293,8 +293,8 @@ function CanvasOverlay({
       ctx.lineWidth = 1.5;
       ctx.stroke();
 
-      ctx.fillStyle = "rgba(0,0,0,0.75)";
-      ctx.font = "bold 10px DM Sans, sans-serif";
+      ctx.fillStyle = "rgb(18, 18, 18)";
+      ctx.font = "bold 12px DM Sans, SemiBold 600, sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(String(v.num), bx, by + 0.5);
