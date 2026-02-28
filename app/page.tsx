@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 
 type Box = {
   x: number;
@@ -59,6 +59,116 @@ const effortConfig = {
     numBg: "bg-red-500/20 text-red-300",
   },
 };
+
+const HISTORY_KEY = "url-scan-history";
+const MAX_HISTORY = 20;
+
+function loadHistory(): string[] {
+  if (typeof window === "undefined") return [];
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); }
+  catch { return []; }
+}
+
+function UrlInput({
+  value,
+  onChange,
+  history,
+  placeholder,
+  inputClassName,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  history: string[];
+  placeholder?: string;
+  inputClassName?: string;
+}) {
+  const [historyIdx, setHistoryIdx] = useState(-1);
+  const [savedInput, setSavedInput] = useState("");
+  const [open, setOpen] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const suggestions = useMemo(() => {
+    const q = value.trim().toLowerCase();
+    if (!q) return history.slice(0, 6);
+    return history.filter((h) => h.toLowerCase().includes(q)).slice(0, 6);
+  }, [value, history]);
+
+  function commit(url: string) {
+    onChange(url);
+    setOpen(false);
+    setHistoryIdx(-1);
+    inputRef.current?.focus();
+  }
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setHistoryIdx(-1);
+    onChange(e.target.value);
+    setOpen(true);
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setOpen(false);
+      if (historyIdx === -1) setSavedInput(value);
+      const next = Math.min(historyIdx + 1, history.length - 1);
+      setHistoryIdx(next);
+      if (history[next] !== undefined) onChange(history[next]);
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setOpen(false);
+      if (historyIdx === -1) return;
+      if (historyIdx === 0) {
+        setHistoryIdx(-1);
+        onChange(savedInput);
+      } else {
+        const next = historyIdx - 1;
+        setHistoryIdx(next);
+        if (history[next] !== undefined) onChange(history[next]);
+      }
+    } else if (e.key === "Escape") {
+      if (open) { setOpen(false); }
+      else if (historyIdx >= 0) { setHistoryIdx(-1); onChange(savedInput); }
+    }
+  }
+
+  const showDropdown = open && suggestions.length > 0 && history.length > 0;
+
+  return (
+    <div className="relative flex-1 min-w-0">
+      <input
+        ref={inputRef}
+        type="text"
+        value={value}
+        onChange={handleChange}
+        onKeyDown={handleKeyDown}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        placeholder={placeholder}
+        className={inputClassName}
+      />
+      {showDropdown && (
+        <div className="absolute z-30 left-0 right-0 top-full mt-1 bg-[#1c1c1c] border border-white/10 rounded-lg overflow-hidden shadow-2xl">
+          {!value.trim() && (
+            <div className="px-3 pt-2 pb-1">
+              <span className="text-zinc-500 text-[10px] uppercase tracking-wider font-semibold">Recent</span>
+            </div>
+          )}
+          {suggestions.map((url) => (
+            <button
+              key={url}
+              type="button"
+              onMouseDown={() => commit(url)}
+              className="w-full text-left px-3 py-2 text-xs text-zinc-400 hover:bg-white/5 hover:text-white transition truncate block"
+            >
+              {url}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -253,8 +363,19 @@ export default function Home() {
   const [pageHeight, setPageHeight] = useState(900);
   const [activeViolation, setActiveViolation] = useState<NumberedViolation | null>(null);
   const [hiddenEfforts, setHiddenEfforts] = useState<Set<string>>(new Set());
+  const [urlHistory, setUrlHistory] = useState<string[]>([]);
   const rightPanelRef = useRef<HTMLDivElement>(null);
   const screenshotRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => { setUrlHistory(loadHistory()); }, []);
+
+  function pushToHistory(url: string) {
+    setUrlHistory((prev) => {
+      const next = [url, ...prev.filter((h) => h !== url)].slice(0, MAX_HISTORY);
+      try { localStorage.setItem(HISTORY_KEY, JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }
 
   // Auto-scroll right panel when selected overlay is out of view
   useEffect(() => {
@@ -284,14 +405,17 @@ export default function Home() {
     e.preventDefault();
     const fullUrl = getFullUrl(domain);
     if (!fullUrl) return;
+    const isRescanning = total !== null && screenshot !== null;
     setLoading(true);
-    setViolations([]);
-    setTotal(null);
     setError(null);
-    setScannedUrl(null);
-    setScreenshot(null);
     setActiveViolation(null);
     setHiddenEfforts(new Set());
+    if (!isRescanning) {
+      setViolations([]);
+      setTotal(null);
+      setScannedUrl(null);
+      setScreenshot(null);
+    }
 
     const res = await fetch("/api/scan", {
       method: "POST",
@@ -303,6 +427,7 @@ export default function Home() {
     if (data.error) {
       setError(data.error);
     } else {
+      pushToHistory(fullUrl);
       setViolations(data.violations ?? []);
       setTotal(data.total ?? 0);
       setScannedUrl(fullUrl);
@@ -352,12 +477,12 @@ export default function Home() {
         <div className="min-h-screen flex flex-col items-center justify-center px-4 py-16">
           <div className="w-full max-w-xl">
             <div className="mb-12 fade-up">
-              <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-1 mb-6">
+              <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-1 mb-6">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 scanning-dot" />
                 <span className="text-xs text-zinc-300 tracking-wide">WCAG 2.1 AA — automated audit</span>
               </div>
               <h1 className="text-white text-5xl mb-3 leading-tight" style={{ fontFamily: "'DM Serif Display', serif" }}>
-                Is your site<br />
+                Is your website<br />
                 <em className="text-zinc-400" style={{ fontStyle: "italic" }}>accessible?</em>
               </h1>
               <p className="text-zinc-300 text-base leading-relaxed max-w-md">
@@ -367,17 +492,17 @@ export default function Home() {
 
             <form onSubmit={handleSubmit} className="mb-10 fade-up-1">
               <div className="flex gap-2">
-                <input
-                  type="text"
+                <UrlInput
                   value={domain}
-                  onChange={(e) => setDomain(e.target.value)}
+                  onChange={setDomain}
+                  history={urlHistory}
                   placeholder="Enter URL"
-                  className="flex-1 bg-white/5 text-white border border-white/15 rounded-xl px-5 py-4 text-sm outline-none focus:border-white/40 transition placeholder-zinc-500"
+                  inputClassName="w-full bg-white/5 text-white border border-white/15 rounded-lg px-5 py-4 text-sm outline-none focus:border-white/40 transition placeholder-zinc-500"
                 />
                 <button
                   type="submit"
                   disabled={loading || !domain}
-                  className="bg-white text-black font-semibold px-7 py-4 rounded-xl hover:bg-zinc-100 transition disabled:opacity-40 text-sm whitespace-nowrap"
+                  className="bg-white text-black font-semibold px-7 py-4 rounded-lg hover:bg-zinc-100 transition disabled:opacity-40 text-sm whitespace-nowrap"
                 >
                   {loading ? (
                     <span className="flex items-center gap-2">
@@ -390,13 +515,13 @@ export default function Home() {
             </form>
 
             {error && (
-              <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-5 py-4 mb-6 fade-up">
+              <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-5 py-4 mb-6 fade-up">
                 <p className="text-red-300 text-sm">{error}</p>
               </div>
             )}
 
             <div className="grid grid-cols-2 gap-3 fade-up-2">
-              <div className="bg-white/[0.04] border border-white/10 rounded-xl p-4">
+              <div className="bg-white/[0.04] border border-white/10 rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
                   <span className="text-zinc-200 text-xs font-semibold uppercase tracking-wider">EU — EAA 2025</span>
@@ -405,7 +530,7 @@ export default function Home() {
                   European Accessibility Act in force since <span className="text-white font-medium">June 2025</span>. All digital products sold in the EU must comply or face fines.
                 </p>
               </div>
-              <div className="bg-white/[0.04] border border-white/10 rounded-xl p-4">
+              <div className="bg-white/[0.04] border border-white/10 rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
                   <span className="text-zinc-200 text-xs font-semibold uppercase tracking-wider">US — ADA Title III</span>
@@ -434,7 +559,20 @@ export default function Home() {
 
       {/* RESULTS */}
       {hasResults && (
-        <div className="flex h-screen overflow-hidden fade-in">
+        <div className="relative flex h-screen overflow-hidden fade-in">
+
+          {/* SCANNING OVERLAY */}
+          {loading && (
+            <div className="absolute inset-0 bg-black/85 backdrop-blur-sm z-50 flex flex-col items-center justify-center gap-6">
+              <div className="w-14 h-14 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+              <div className="text-center">
+                <p className="text-white text-xl font-medium mb-2">Scanning website...</p>
+                <p className="text-zinc-400 text-sm max-w-xs leading-relaxed">
+                  Loading the page, handling cookie banners and running WCAG accessibility checks — this may take up to 30 seconds
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* LEFT PANEL */}
           <div className="w-[300px] flex-shrink-0 bg-[#111] border-r border-white/8 flex flex-col h-full">
@@ -442,12 +580,12 @@ export default function Home() {
             {/* Rescan */}
             <div className="px-3 py-3 border-b border-white/8">
               <form onSubmit={handleSubmit} className="flex gap-1.5">
-                <input
-                  type="text"
+                <UrlInput
                   value={domain}
-                  onChange={(e) => setDomain(e.target.value)}
+                  onChange={setDomain}
+                  history={urlHistory}
                   placeholder="Enter URL"
-                  className="flex-1 bg-white/5 text-white border border-white/15 rounded-lg px-3 py-2 text-xs outline-none focus:border-white/40 transition placeholder-zinc-500 min-w-0"
+                  inputClassName="w-full bg-white/5 text-white border border-white/15 rounded-lg px-3 py-2 text-xs outline-none focus:border-white/40 transition placeholder-zinc-500"
                 />
                 <button
                   type="submit"
@@ -487,6 +625,12 @@ export default function Home() {
                 </span>
               </div>
             </div>
+
+            {error && (
+              <div className="mx-3 my-2 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
+                <p className="text-red-300 text-xs">{error}</p>
+              </div>
+            )}
 
             {/* Violations list */}
             <div className="flex-1 overflow-y-auto">
@@ -627,7 +771,7 @@ export default function Home() {
             {/* Screenshot + canvas overlay */}
             <div
               ref={screenshotRef}
-              className="relative w-full rounded-xl overflow-hidden border border-white/10 shadow-2xl"
+              className="relative w-full rounded-lg overflow-hidden border border-white/10 shadow-2xl"
               style={{ aspectRatio: `${pageWidth} / ${pageHeight}` }}
               onClick={() => setActiveViolation(null)}
             >
