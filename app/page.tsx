@@ -29,8 +29,8 @@ const effortConfig = {
     label: "Quick Wins",
     sublabel: "Fix these today",
     badge: "bg-emerald-500/10 text-emerald-400",
-    overlay: "rgba(52, 211, 153, 0.15)",
-    stroke: "#34d399",
+    overlay: "rgba(27, 59, 47, 0.15)",
+    stroke: "#093324",
     strokeRgb: [52, 211, 153],
     activeBg: "bg-emerald-500/10",
     accentBar: "bg-emerald-400",
@@ -42,8 +42,8 @@ const effortConfig = {
     label: "Moderate Effort",
     sublabel: "Plan for next sprint",
     badge: "bg-yellow-500/10 text-yellow-400",
-    overlay: "rgba(251, 191, 36, 0.15)",
-    stroke: "#fbbf24",
+    overlay: "rgba(195, 113, 37, 0.15)",
+    stroke: "#995d24",
     strokeRgb: [251, 191, 36],
     activeBg: "bg-yellow-500/10",
     accentBar: "bg-yellow-400",
@@ -55,13 +55,13 @@ const effortConfig = {
     label: "Complex Fixes",
     sublabel: "Requires design + dev",
     badge: "bg-red-500/10 text-red-400",
-    overlay: "rgba(248, 113, 113, 0.15)",
-    stroke: "#f87171",
+    overlay: "rgba(179, 65, 65, 0.15)",
+    stroke: "#731e1e",
     strokeRgb: [248, 113, 113],
     activeBg: "bg-red-500/10",
     accentBar: "bg-red-400",
     numBg: "bg-red-500/20 text-red-300",
-    badgeFill: "rgb(224, 180, 180)",   // dusty rose pastel
+    badgeFill: "rgb(77, 14, 86)",   // dusty rose pastel
     badgeStroke: "rgb(183, 128, 128)", // deeper rose
   },
 };
