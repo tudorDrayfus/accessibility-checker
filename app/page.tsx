@@ -96,6 +96,7 @@ function CanvasOverlay({
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [cursor, setCursor] = useState<"pointer" | "default">("default");
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -189,19 +190,9 @@ function CanvasOverlay({
     return () => ro.disconnect();
   }, [draw]);
 
-  function handleClick(e: React.MouseEvent<HTMLCanvasElement>) {
-    const canvas = canvasRef.current;
-    const container = containerRef.current;
-    if (!canvas || !container) return;
-
-    const rect = container.getBoundingClientRect();
-    const mx = e.clientX - rect.left;
-    const my = e.clientY - rect.top;
+  function hitTest(mx: number, my: number, rect: DOMRect): NumberedViolation | null {
     const scaleX = rect.width / pageWidth;
     const scaleY = rect.height / pageHeight;
-
-    // Find topmost non-hidden violation box at click position
-    let hit: NumberedViolation | null = null;
     for (let vi = violations.length - 1; vi >= 0; vi--) {
       const v = violations[vi];
       if (hiddenEfforts.has(v.effort)) continue;
@@ -210,14 +201,25 @@ function CanvasOverlay({
         const y = box.y * scaleY;
         const w = box.width * scaleX;
         const h = box.height * scaleY;
-        if (mx >= x && mx <= x + w && my >= y && my <= y + h) {
-          hit = v;
-          break;
-        }
+        if (mx >= x && mx <= x + w && my >= y && my <= y + h) return v;
       }
-      if (hit) break;
     }
+    return null;
+  }
 
+  function handleMouseMove(e: React.MouseEvent<HTMLCanvasElement>) {
+    const container = containerRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const hit = hitTest(e.clientX - rect.left, e.clientY - rect.top, rect);
+    setCursor(hit ? "pointer" : "default");
+  }
+
+  function handleClick(e: React.MouseEvent<HTMLCanvasElement>) {
+    const container = containerRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const hit = hitTest(e.clientX - rect.left, e.clientY - rect.top, rect);
     if (hit && hit.id === activeViolation?.id) {
       onViolationClick(null);
     } else {
@@ -230,8 +232,10 @@ function CanvasOverlay({
       <canvas
         ref={canvasRef}
         className="absolute inset-0 w-full h-full"
-        style={{ cursor: "crosshair" }}
+        style={{ cursor }}
         onClick={handleClick}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={() => setCursor("default")}
       />
     </div>
   );
@@ -495,8 +499,8 @@ export default function Home() {
                   <div key={effortLevel}>
                     <div className="px-4 py-3 flex items-center justify-between sticky top-0 bg-[#111] border-b border-white/5 z-10">
                       <div className="flex flex-col gap-0.5">
-                        <span className="text-zinc-200 text-[11px] font-semibold uppercase tracking-wider">{config.label}</span>
-                        <span className="text-zinc-500 text-[10px]">{config.sublabel}</span>
+                        <span className="text-zinc-200 text-xs font-semibold uppercase tracking-wider">{config.label}</span>
+                        <span className="text-zinc-400 text-xs">{config.sublabel}</span>
                       </div>
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${config.badge}`}>
                         {group.length}
@@ -519,14 +523,14 @@ export default function Home() {
                               className="flex-1 text-left px-3 py-3"
                             >
                               <div className="flex items-start gap-2">
-                                <span className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold mt-0.5 ${config.numBg}`}>
+                                <span className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold mt-0.5 ${config.numBg}`}>
                                   {v.num}
                                 </span>
                                 <div className="min-w-0 flex-1">
                                   <p className={`text-xs font-medium leading-snug ${isActive ? "text-white" : "text-zinc-200"}`}>
                                     {v.title}
                                   </p>
-                                  <p className="text-zinc-500 text-xs mt-0.5">
+                                  <p className="text-zinc-400 text-xs mt-0.5">
                                     {v.category}{v.nodes > 1 ? ` · ${v.nodes} elements` : ""}
                                   </p>
                                 </div>
@@ -612,12 +616,12 @@ export default function Home() {
                       }}
                     />
                     {config.label}
-                    <span className="text-zinc-500">{count}</span>
-                    {isHidden && <span className="text-zinc-400 text-[10px] font-medium ml-0.5">hidden</span>}
+                    <span className="text-zinc-400">{count}</span>
+                    {isHidden && <span className="text-zinc-400 text-xs font-medium ml-0.5">hidden</span>}
                   </button>
                 );
               })}
-              <span className="text-zinc-600 text-xs ml-auto">Click to select · Click legend to hide</span>
+              <span className="text-zinc-400 text-xs ml-auto">Click to select · Click legend to hide</span>
             </div>
 
             {/* Screenshot + canvas overlay */}
@@ -633,6 +637,8 @@ export default function Home() {
                 className="w-full h-full object-cover object-top"
                 style={{ display: "block" }}
               />
+              {/* Dark tint to make colored overlays pop */}
+              <div className="absolute inset-0 bg-black/35 pointer-events-none" />
               <CanvasOverlay
                 violations={numberedViolations}
                 activeViolation={activeViolation}
