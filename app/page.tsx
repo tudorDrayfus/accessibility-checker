@@ -260,7 +260,7 @@ function CanvasOverlay({
       ctx.globalAlpha = isActive ? 1 : 0.6;
       for (const box of v.boxes ?? []) {
         const x = box.x * scaleX;
-        const y = (box.y * scaleY) + 5;
+        const y = box.y * scaleY;
         const w = box.width * scaleX;
         const h = box.height * scaleY;
         ctx.beginPath();
