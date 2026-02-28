@@ -55,7 +55,7 @@ const effortConfig = {
 };
 
 export default function Home() {
-  const [url, setUrl] = useState("");
+  const [domain, setDomain] = useState("");
   const [violations, setViolations] = useState<Violation[]>([]);
   const [total, setTotal] = useState<number | null>(null);
   const [scannedUrl, setScannedUrl] = useState<string | null>(null);
@@ -67,8 +67,18 @@ export default function Home() {
   const [activeViolation, setActiveViolation] = useState<Violation | null>(null);
   const imageRef = useRef<HTMLDivElement>(null);
 
+  function getFullUrl(input: string) {
+    const trimmed = input.trim();
+    if (!trimmed) return "";
+    if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return trimmed;
+    return `https://www.${trimmed}`;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const fullUrl = getFullUrl(domain);
+    if (!fullUrl) return;
+
     setLoading(true);
     setViolations([]);
     setTotal(null);
@@ -80,7 +90,7 @@ export default function Home() {
     const res = await fetch("/api/scan", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url }),
+      body: JSON.stringify({ url: fullUrl }),
     });
 
     const data = await res.json();
@@ -90,7 +100,7 @@ export default function Home() {
     } else {
       setViolations(data.violations ?? []);
       setTotal(data.total ?? 0);
-      setScannedUrl(url);
+      setScannedUrl(fullUrl);
       setScreenshot(data.screenshot ?? null);
       setPageWidth(data.pageWidth ?? 1440);
       setPageHeight(data.pageHeight ?? 900);
@@ -124,23 +134,87 @@ export default function Home() {
         .fade-up { animation: fadeUp 0.5s ease both; }
         .fade-in { animation: fadeIn 0.4s ease both; }
         .scanning-dot { animation: pulse-dot 1s infinite; }
-        .overlay-box { cursor: pointer; transition: all 0.15s ease; }
+        .overlay-box { cursor: pointer; transition: all 0.2s ease; }
         .violation-row { transition: background 0.15s ease; }
         .violation-row:hover { background: rgba(255,255,255,0.04); }
         .violation-row.active { background: rgba(255,255,255,0.06); }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 2px; }
+        .url-input-wrapper {
+          display: flex;
+          align-items: center;
+          background: rgba(255,255,255,0.05);
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 12px;
+          overflow: hidden;
+          transition: border-color 0.2s;
+        }
+        .url-input-wrapper:focus-within {
+          border-color: rgba(255,255,255,0.3);
+        }
+        .url-prefix {
+          padding: 16px 0 16px 20px;
+          color: #3f3f46;
+          font-size: 14px;
+          white-space: nowrap;
+          user-select: none;
+          flex-shrink: 0;
+        }
+        .url-input {
+          flex: 1;
+          background: transparent;
+          color: white;
+          font-size: 14px;
+          padding: 16px 8px;
+          outline: none;
+          border: none;
+          min-width: 0;
+        }
+        .url-input::placeholder { color: #52525b; }
+        .url-input-sm-wrapper {
+          display: flex;
+          align-items: center;
+          background: rgba(255,255,255,0.05);
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 8px;
+          overflow: hidden;
+          transition: border-color 0.2s;
+          flex: 1;
+          min-width: 0;
+        }
+        .url-input-sm-wrapper:focus-within {
+          border-color: rgba(255,255,255,0.3);
+        }
+        .url-prefix-sm {
+          padding: 8px 0 8px 12px;
+          color: #3f3f46;
+          font-size: 11px;
+          white-space: nowrap;
+          user-select: none;
+          flex-shrink: 0;
+        }
+        .url-input-sm {
+          flex: 1;
+          background: transparent;
+          color: white;
+          font-size: 11px;
+          padding: 8px 6px;
+          outline: none;
+          border: none;
+          min-width: 0;
+        }
+        .url-input-sm::placeholder { color: #52525b; }
       `}</style>
 
       {/* LANDING STATE */}
       {!hasResults && (
-        <div className="flex items-center justify-center min-h-screen px-4 py-16">
+        <div className="flex flex-col items-center justify-center min-h-screen px-4 py-16">
           <div className="w-full max-w-xl">
-            <div className="mb-12 fade-up">
+            <div className="mb-10 fade-up">
               <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-3 py-1 mb-6">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 scanning-dot" />
-                <span className="text-xs text-zinc-400 tracking-wide">Free accessibility audit</span>
+                <span className="text-xs text-zinc-400 tracking-wide">Checks against WCAG 2.1 AA</span>
               </div>
               <h1
                 className="text-white text-5xl mb-3 leading-tight"
@@ -150,24 +224,27 @@ export default function Home() {
                 <em className="text-zinc-500">accessible?</em>
               </h1>
               <p className="text-zinc-500 text-base leading-relaxed max-w-md">
-                Paste any URL and get a plain-English report grouped by effort —
-                no WCAG jargon, just clear fixes.
+                Paste any URL and get a clear list of accessibility fixes.
               </p>
             </div>
 
+            {/* URL input */}
             <form onSubmit={handleSubmit} className="fade-up" style={{ animationDelay: "0.1s" }}>
               <div className="flex gap-2">
-                <input
-                  type="url"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  placeholder="https://yourwebsite.com"
-                  className="flex-1 bg-white/5 text-white border border-white/10 rounded-xl px-5 py-4 text-sm outline-none focus:border-white/30 transition placeholder-zinc-600"
-                />
+                <div className="url-input-wrapper flex-1">
+                  <span className="url-prefix">https://www.</span>
+                  <input
+                    type="text"
+                    value={domain}
+                    onChange={(e) => setDomain(e.target.value)}
+                    placeholder="yourwebsite.com"
+                    className="url-input"
+                  />
+                </div>
                 <button
                   type="submit"
-                  disabled={loading || !url}
-                  className="bg-white text-black font-semibold px-7 py-4 rounded-xl hover:bg-zinc-100 transition disabled:opacity-40 text-sm whitespace-nowrap"
+                  disabled={loading || !domain}
+                  className="bg-white text-black font-semibold px-7 py-4 rounded-xl hover:bg-zinc-100 transition disabled:opacity-40 text-sm whitespace-nowrap flex-shrink-0"
                 >
                   {loading ? (
                     <span className="flex items-center gap-2">
@@ -180,22 +257,38 @@ export default function Home() {
             </form>
 
             {error && (
-              <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-5 py-4 mt-6 fade-up">
+              <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-5 py-4 mt-4 fade-up">
                 <p className="text-red-400 text-sm">{error}</p>
               </div>
             )}
 
-            <div className="mt-16 flex flex-col items-center gap-2">
+            {/* Legal context */}
+            <div className="mt-10 fade-up" style={{ animationDelay: "0.2s" }}>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4">
+                  <p className="text-zinc-400 text-xs font-semibold uppercase tracking-wider mb-1.5">🇪🇺 European Accessibility Act</p>
+                  <p className="text-zinc-500 text-xs leading-relaxed">
+                    In force since <span className="text-zinc-300">June 2025</span>. All digital products and services sold in the EU must meet accessibility standards or face fines.
+                  </p>
+                </div>
+                <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4">
+                  <p className="text-zinc-400 text-xs font-semibold uppercase tracking-wider mb-1.5">🇺🇸 ADA Title III</p>
+                  <p className="text-zinc-500 text-xs leading-relaxed">
+                    US courts consistently rule that websites must be accessible under the ADA. <span className="text-zinc-300">Thousands of lawsuits</span> filed annually against non-compliant sites.
+                  </p>
+                </div>
+              </div>
+              <p className="text-zinc-700 text-xs text-center mt-3">
+                This tool checks against <span className="text-zinc-500">WCAG 2.1 AA</span> — the standard referenced by both laws.
+              </p>
+            </div>
+
+            {/* Footer */}
+            <div className="mt-10 flex flex-col items-center gap-1.5">
               <p className="text-zinc-700 text-xs">
                 Please double check results as I am working on improving this.{" "}
                 <a href="https://www.linkedin.com/in/tudor-teisanu-7b08a4b2/" target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-white transition">
                   Please let me know if you have any feedback.
-                </a>
-              </p>
-              <p className="text-zinc-700 text-xs">
-                Made by{" "}
-                <a href="https://www.linkedin.com/in/tudor-teisanu-7b08a4b2/" target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-white transition">
-                  Tudor Teisanu
                 </a>
               </p>
             </div>
@@ -214,13 +307,16 @@ export default function Home() {
             <div className="px-4 py-4 border-b border-white/5">
               {/* Rescan input */}
               <form onSubmit={handleSubmit} className="flex gap-1.5 mb-4">
-                <input
-                  type="url"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  placeholder="https://yourwebsite.com"
-                  className="flex-1 bg-white/5 text-white border border-white/10 rounded-lg px-3 py-2 text-xs outline-none focus:border-white/30 transition placeholder-zinc-600 min-w-0"
-                />
+                <div className="url-input-sm-wrapper">
+                  <span className="url-prefix-sm">https://www.</span>
+                  <input
+                    type="text"
+                    value={domain}
+                    onChange={(e) => setDomain(e.target.value)}
+                    placeholder="yourwebsite.com"
+                    className="url-input-sm"
+                  />
+                </div>
                 <button
                   type="submit"
                   disabled={loading}
@@ -249,7 +345,7 @@ export default function Home() {
               {/* Score bar */}
               <div>
                 <div className="flex justify-between text-xs text-zinc-600 mb-1">
-                  <span>Score</span>
+                  <span>WCAG 2.1 AA score</span>
                   <span>{Math.max(0, 100 - (total ?? 0) * 5)}/100</span>
                 </div>
                 <div className="h-1 bg-white/5 rounded-full overflow-hidden">
@@ -270,7 +366,6 @@ export default function Home() {
 
                 return (
                   <div key={effortLevel}>
-                    {/* Group label */}
                     <div className="px-4 py-2 flex items-center justify-between sticky top-0 bg-[#111] border-b border-white/5">
                       <div className="flex items-center gap-1.5">
                         <span className="text-xs">{config.icon}</span>
@@ -281,7 +376,6 @@ export default function Home() {
                       </span>
                     </div>
 
-                    {/* Violation rows */}
                     {group.map((v) => {
                       const isActive = activeViolation?.id === v.id;
                       return (
@@ -300,7 +394,6 @@ export default function Home() {
                             </div>
                           </div>
 
-                          {/* Expanded detail */}
                           {isActive && (
                             <div className="mt-3 ml-3.5">
                               <p className="text-zinc-400 text-xs leading-relaxed mb-2">{v.why}</p>
@@ -322,11 +415,7 @@ export default function Home() {
             {/* Footer */}
             <div className="px-4 py-3 border-t border-white/5">
               <p className="text-zinc-700 text-xs">
-                Made by{" "}
-                <a href="https://www.linkedin.com/in/tudor-teisanu-7b08a4b2/" target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-white transition">
-                  Tudor Teisanu
-                </a>
-                {" "}·{" "}
+                Checks against WCAG 2.1 AA ·{" "}
                 <a href="https://www.linkedin.com/in/tudor-teisanu-7b08a4b2/" target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-white transition">
                   Feedback
                 </a>
@@ -348,7 +437,6 @@ export default function Home() {
                 className="w-full h-full object-cover object-top"
               />
 
-              {/* Show all boxes dimmed, active violation boxes highlighted */}
               {violations.map((violation) =>
                 (violation.boxes ?? []).map((box, boxIdx) => {
                   const config = effortConfig[violation.effort];
