@@ -257,10 +257,10 @@ function CanvasOverlay({
       const isActive = activeViolation?.id === v.id;
       // idle: slight reveal so areas stand out without colour
       // active: full reveal for selected, near-invisible for others
-      ctx.globalAlpha = isActive ? 0.5 : 1;
+      ctx.globalAlpha = isActive ? 1 : 0.4;
       for (const box of v.boxes ?? []) {
         const x = box.x * scaleX;
-        const y = (box.y * scaleY) + 20;
+        const y = (box.y * scaleY) + 5;
         const w = box.width * scaleX;
         const h = box.height * scaleY;
         ctx.beginPath();
@@ -671,7 +671,7 @@ export default function Home() {
                       <stop offset="100%" stopColor={scoreColor} />
                     </linearGradient>
                   </defs>
-                  <circle cx="24" cy="24" r="17" fill="none" stroke="#1e1e1e" strokeWidth="6" />
+                  <circle cx="24" cy="24" r="17" fill={scoreColor} stroke="#1e1e1e" strokeWidth="6" />
                   <circle
                     cx="24" cy="24" r="17"
                     fill="none"
