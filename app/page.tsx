@@ -601,7 +601,7 @@ export default function Home() {
               <p className="text-zinc-400 text-xs text-center">
                 Please double check results as I am working on improving this.{" "}
                 <a href="https://www.linkedin.com/in/tudor-teisanu-7b08a4b2/" target="_blank" rel="noopener noreferrer" className="text-zinc-200 underline hover:text-white transition">
-                  Please let me know if you have any feedback.
+                  Any feedback?
                 </a>
               </p>
             </div>
