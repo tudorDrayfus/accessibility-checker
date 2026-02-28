@@ -390,6 +390,16 @@ export default function Home() {
   useEffect(() => {
     if (window.innerWidth < 768) setSortMode("impact");
   }, []);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const key = params.get("bypass");
+    if (key) {
+      try { localStorage.setItem("bypass-key", key); } catch {}
+      // Clean the key from the URL without a page reload
+      const clean = window.location.pathname;
+      window.history.replaceState({}, "", clean);
+    }
+  }, []);
 
   function pushToHistory(url: string) {
     setUrlHistory((prev) => {
@@ -459,9 +469,15 @@ export default function Home() {
       setScreenshot(null);
     }
 
+    const bypassKey = typeof window !== "undefined"
+      ? (localStorage.getItem("bypass-key") ?? "")
+      : "";
     const res = await fetch("/api/scan", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(bypassKey ? { "x-bypass-key": bypassKey } : {}),
+      },
       body: JSON.stringify({ url: fullUrl }),
     });
 
@@ -523,11 +539,11 @@ export default function Home() {
           <div className={`w-0.5 flex-shrink-0 ${isActive ? config.accentBar : "bg-transparent"}`} />
           <button
             onClick={() => setActiveViolation(isActive ? null : v)}
-            className="flex-1 text-left px-3 py-3"
+            className="flex-1 text-left px-3 py-4"
           >
             <div className="flex items-start gap-2">
               <span
-                className="flex-shrink-0 w-5 h-5 rounded-lg flex items-center justify-center text-xs font-bold mt-0.5 bg-black text-white"
+                className="flex-shrink-0 w-5 h-5 rounded-lg flex items-center justify-center text-xs font-bold mt-0.5 bg-[#1e1e1e] text-white"
                 style={{ boxShadow: `0 0 0 1px ${config.stroke}66` }}
               >
                 {v.num}
@@ -581,7 +597,7 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-[#0a0a0a]" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <main className="min-h-screen bg-[#131313]" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap');
         @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
@@ -709,7 +725,7 @@ export default function Home() {
           )}
 
           {/* LEFT PANEL */}
-          <div className="w-[360px] flex-shrink-0 bg-[#111] border-r border-white/8 flex flex-col h-full">
+          <div className="w-[360px] flex-shrink-0 bg-[#181818] border-r border-white/8 flex flex-col h-full">
 
             {/* Rescan */}
             <div className="px-3 py-3 border-b border-white/8">
@@ -745,28 +761,29 @@ export default function Home() {
                 </p>
                 <p className="text-zinc-400 text-sm truncate max-w-[220px] mt-0.5">{scannedUrl}</p>
               </div>
-              <div className="relative w-12 h-12 flex-shrink-0">
-                <svg width="48" height="48" viewBox="0 0 48 48">
+              <div className="relative w-[72px] h-[72px] flex-shrink-0">
+                <svg width="72" height="72" viewBox="0 0 72 72">
                   <defs>
                     <linearGradient id="dialGrad" x1="0" y1="0" x2="1" y2="1">
                       <stop offset="0%" stopColor={scoreColor} />
                       <stop offset="100%" stopColor={scoreColor} />
                     </linearGradient>
                   </defs>
-                  <circle cx="24" cy="24" r="17" fill="none" stroke="#1e1e1e" strokeWidth="6" />
+                  <circle cx="36" cy="36" r="28" fill="none" stroke="#222" strokeWidth="6" />
                   <circle
-                    cx="24" cy="24" r="17"
+                    cx="36" cy="36" r="28"
                     fill="none"
                     stroke="url(#dialGrad)"
                     strokeWidth="6"
                     strokeLinecap="round"
-                    strokeDasharray={`${(score / 100) * 106.8} 106.8`}
+                    strokeDasharray={`${(score / 100) * 175.9} 175.9`}
                     style={{ transform: "rotate(-90deg)", transformOrigin: "50% 50%" }}
                   />
                 </svg>
-                <span className="absolute inset-0 flex items-center justify-center text-white text-xs font-medium">
-                  {score}
-                </span>
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
+                  <span className="text-white text-base font-semibold leading-none">{score}</span>
+                  <span className="text-zinc-500 text-[9px] leading-none uppercase tracking-wide">score</span>
+                </div>
               </div>
             </div>
 
@@ -805,7 +822,7 @@ export default function Home() {
                       {withLoc.map((v) => makeRow(v, true))}
                       {noLoc.length > 0 && (
                         <>
-                          <div className="px-4 py-3 flex items-center justify-between sticky top-0 bg-[#111] border-b border-t border-white/5 z-10">
+                          <div className="px-4 py-3 flex items-center justify-between sticky top-0 bg-[#181818] border-b border-t border-white/5 z-10">
                             <div className="flex flex-col gap-0.5">
                               <span className="text-zinc-200 text-sm font-semibold uppercase tracking-wider">Page-level issues</span>
                               <span className="text-zinc-400 text-sm">No specific element location</span>
@@ -827,7 +844,7 @@ export default function Home() {
                   const config = effortConfig[effortLevel];
                   return (
                     <div key={effortLevel}>
-                      <div className="px-4 py-3 flex items-center justify-between sticky top-0 bg-[#111] border-b border-white/5 z-10">
+                      <div className="px-4 py-3 flex items-center justify-between sticky top-0 bg-[#181818] border-b border-white/5 z-10">
                         <div className="flex flex-col gap-0.5">
                           <span className="text-zinc-200 text-sm font-semibold uppercase tracking-wider">{config.label}</span>
                           <span className="text-zinc-400 text-sm">{config.sublabel}</span>
@@ -866,7 +883,7 @@ export default function Home() {
           </div>
 
           {/* RIGHT — visual */}
-          <div ref={rightPanelRef} className="flex-1 overflow-auto bg-[#0d0d0d] p-6">
+          <div ref={rightPanelRef} className="flex-1 overflow-auto bg-[#131313] p-6">
 
             {/* Legend / toggle */}
             <div className="flex items-center gap-2 mb-4 flex-wrap">

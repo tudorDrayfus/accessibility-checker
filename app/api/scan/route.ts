@@ -1,5 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { translateViolation } from "./translations";
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
+
+// Rate limiter — only active when Upstash env vars are present (skipped in local dev)
+const ratelimit =
+  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+    ? new Ratelimit({
+        redis: Redis.fromEnv(),
+        limiter: Ratelimit.slidingWindow(3, "24 h"),
+      })
+    : null;
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -99,6 +110,24 @@ export async function POST(req: NextRequest) {
 
   if (!url) {
     return NextResponse.json({ error: "URL is required" }, { status: 400 });
+  }
+
+  const bypassKey = req.headers.get("x-bypass-key") ?? "";
+  const isBypassed =
+    process.env.RATE_LIMIT_BYPASS_KEY &&
+    bypassKey === process.env.RATE_LIMIT_BYPASS_KEY;
+
+  if (ratelimit && !isBypassed) {
+    const ip =
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "anonymous";
+    const { success, reset } = await ratelimit.limit(ip);
+    if (!success) {
+      const retryAfterSecs = Math.ceil((reset - Date.now()) / 1000);
+      return NextResponse.json(
+        { error: `You've used your 3 free scans for today. Try again in ${Math.ceil(retryAfterSecs / 3600)} hour(s).` },
+        { status: 429, headers: { "Retry-After": String(retryAfterSecs) } },
+      );
+    }
   }
 
   try {
