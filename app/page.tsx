@@ -90,39 +90,21 @@ function UrlInput({
 }) {
   const [historyIdx, setHistoryIdx] = useState(-1);
   const [savedInput, setSavedInput] = useState("");
-  const [open, setOpen] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const suggestions = useMemo(() => {
-    const q = value.trim().toLowerCase();
-    if (!q) return history.slice(0, 6);
-    return history.filter((h) => h.toLowerCase().includes(q)).slice(0, 6);
-  }, [value, history]);
-
-  function commit(url: string) {
-    onChange(url);
-    setOpen(false);
-    setHistoryIdx(-1);
-    inputRef.current?.focus();
-  }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setHistoryIdx(-1);
     onChange(e.target.value);
-    setOpen(true);
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "ArrowUp") {
       e.preventDefault();
-      setOpen(false);
       if (historyIdx === -1) setSavedInput(value);
       const next = Math.min(historyIdx + 1, history.length - 1);
       setHistoryIdx(next);
       if (history[next] !== undefined) onChange(history[next]);
     } else if (e.key === "ArrowDown") {
       e.preventDefault();
-      setOpen(false);
       if (historyIdx === -1) return;
       if (historyIdx === 0) {
         setHistoryIdx(-1);
@@ -133,40 +115,20 @@ function UrlInput({
         if (history[next] !== undefined) onChange(history[next]);
       }
     } else if (e.key === "Escape") {
-      if (open) { setOpen(false); }
-      else if (historyIdx >= 0) { setHistoryIdx(-1); onChange(savedInput); }
+      if (historyIdx >= 0) { setHistoryIdx(-1); onChange(savedInput); }
     }
   }
-
-  const showDropdown = open && value.trim().length > 0 && suggestions.length > 0;
 
   return (
     <div className="relative flex-1 min-w-0">
       <input
-        ref={inputRef}
         type="text"
         value={value}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
-        onFocus={() => setOpen(true)}
-        onBlur={() => setTimeout(() => setOpen(false), 150)}
         placeholder={placeholder}
         className={inputClassName}
       />
-      {showDropdown && (
-        <div className="absolute z-30 left-0 right-0 top-full mt-1 bg-[#1c1c1c] border border-white/10 rounded-lg overflow-hidden shadow-2xl">
-          {suggestions.map((url) => (
-            <button
-              key={url}
-              type="button"
-              onMouseDown={() => commit(url)}
-              className="w-full text-left px-3 py-2 text-xs text-zinc-400 hover:bg-white/5 hover:text-white transition truncate block"
-            >
-              {url}
-            </button>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
@@ -409,14 +371,14 @@ export default function Home() {
     });
   }
 
-  // Auto-select first violation when results arrive
+  // Auto-select first violation when results arrive (uses sorted order so #1 is always topmost)
   useEffect(() => {
-    if (violations.length > 0) {
-      setActiveViolation({ ...violations[0], num: 1 });
+    if (numberedViolations.length > 0) {
+      setActiveViolation(numberedViolations[0]);
     } else {
       setActiveViolation(null);
     }
-  }, [violations]);
+  }, [violations]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-scroll left panel to show active violation (expanded)
   useEffect(() => {
@@ -513,6 +475,18 @@ export default function Home() {
   }, [loading]);
 
   const hasResults = total !== null && screenshot;
+
+  // Zoom into the active violation if its bounding box is small
+  const zoomInfo = useMemo(() => {
+    if (!activeViolation) return null;
+    const box = activeViolation.boxes?.[0];
+    if (!box) return null;
+    const isSmall = box.width < pageWidth * 0.25 || box.height < pageHeight * 0.2;
+    if (!isSmall) return null;
+    const cx = ((box.x + box.width / 2) / pageWidth) * 100;
+    const cy = ((box.y + box.height / 2) / pageHeight) * 100;
+    return { cx, cy, scale: 2 };
+  }, [activeViolation, pageWidth, pageHeight]);
   const score = Math.max(0, 100 - (total ?? 0) * 5);
   const scoreColor = score > 60 ? "rgb(26, 128, 90)" : score > 30 ? "#c8854a" : "#f87171";
   const scoreColorLight = score > 60 ? "#377b5b" : score > 30 ? "#d68454" : "#e95b5b";
@@ -626,7 +600,7 @@ export default function Home() {
             <div className="mb-12 fade-up">
               <h1 className="text-white text-5xl mb-3 leading-tight" style={{ fontFamily: "'DM Serif Display', serif" }}>
                 Is your website ready<br />
-                for the new<br />
+                for the<br />
                 <em className="text-zinc-400" style={{ fontStyle: "italic" }}>European Accessibility Act?</em>
               </h1>
               <p className="text-zinc-300 text-base leading-relaxed max-w-md">
@@ -934,21 +908,31 @@ export default function Home() {
               style={{ aspectRatio: `${pageWidth} / ${pageHeight}` }}
               onClick={() => setActiveViolation(null)}
             >
-              <img
-                src={`data:image/jpeg;base64,${screenshot}`}
-                alt="Page screenshot"
-                className="w-full h-full object-cover object-top"
-                style={{ display: "block" }}
-              />
-              <CanvasOverlay
-                violations={numberedViolations}
-                activeViolation={activeViolation}
-                hiddenEfforts={hiddenEfforts}
-                pageWidth={pageWidth}
-                pageHeight={pageHeight}
-                showCanvas={showCanvas}
-                onViolationClick={setActiveViolation}
-              />
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  transform: zoomInfo ? `scale(${zoomInfo.scale})` : "scale(1)",
+                  transformOrigin: zoomInfo ? `${zoomInfo.cx}% ${zoomInfo.cy}%` : "center center",
+                  transition: "transform 0.35s ease, transform-origin 0.35s ease",
+                }}
+              >
+                <img
+                  src={`data:image/jpeg;base64,${screenshot}`}
+                  alt="Page screenshot"
+                  className="w-full h-full object-cover object-top"
+                  style={{ display: "block" }}
+                />
+                <CanvasOverlay
+                  violations={numberedViolations}
+                  activeViolation={activeViolation}
+                  hiddenEfforts={hiddenEfforts}
+                  pageWidth={pageWidth}
+                  pageHeight={pageHeight}
+                  showCanvas={showCanvas}
+                  onViolationClick={setActiveViolation}
+                />
+              </div>
             </div>
 
             <p className="text-zinc-400 text-xs mt-3 text-center">
