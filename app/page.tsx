@@ -257,7 +257,7 @@ function CanvasOverlay({
       const isActive = activeViolation?.id === v.id;
       // idle: slight reveal so areas stand out without colour
       // active: full reveal for selected, near-invisible for others
-      ctx.globalAlpha = isActive ? 1 : 0.75;
+      ctx.globalAlpha = isActive ? 1 : 1;
       for (const box of v.boxes ?? []) {
         const x = box.x * scaleX;
         const y = box.y * scaleY;
@@ -667,7 +667,7 @@ export default function Home() {
                 <svg width="48" height="48" viewBox="0 0 48 48">
                   <defs>
                     <linearGradient id="dialGrad" x1="0" y1="0" x2="1" y2="1">
-                      <stop offset="0%" stopColor={scoreColorLight} />
+                      <stop offset="0%" stopColor={scoreColor} />
                       <stop offset="100%" stopColor={scoreColor} />
                     </linearGradient>
                   </defs>
