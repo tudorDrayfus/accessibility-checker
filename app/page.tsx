@@ -35,6 +35,8 @@ const effortConfig = {
     activeBg: "bg-emerald-500/10",
     accentBar: "bg-emerald-400",
     numBg: "bg-emerald-500/20 text-emerald-300",
+    badgeFill: "rgb(168, 213, 193)",   // sage pastel
+    badgeStroke: "rgb(108, 166, 142)", // deeper sage
   },
   Moderate: {
     label: "Moderate Effort",
@@ -46,6 +48,8 @@ const effortConfig = {
     activeBg: "bg-yellow-500/10",
     accentBar: "bg-yellow-400",
     numBg: "bg-yellow-500/20 text-yellow-300",
+    badgeFill: "rgb(236, 210, 165)",   // warm sand pastel
+    badgeStroke: "rgb(196, 164, 108)", // deeper sand
   },
   Complex: {
     label: "Complex Fixes",
@@ -57,6 +61,8 @@ const effortConfig = {
     activeBg: "bg-red-500/10",
     accentBar: "bg-red-400",
     numBg: "bg-red-500/20 text-red-300",
+    badgeFill: "rgb(224, 180, 180)",   // dusty rose pastel
+    badgeStroke: "rgb(183, 128, 128)", // deeper rose
   },
 };
 
@@ -269,25 +275,26 @@ function CanvasOverlay({
     for (const v of violations) {
       if (hiddenEfforts.has(v.effort)) continue;
       const config = effortConfig[v.effort];
-      const [r, g, b] = config.strokeRgb;
       const box = (v.boxes ?? [])[0];
       if (!box) continue;
 
       const x = box.x * scaleX;
       const y = box.y * scaleY;
-      const badgeR = 14;
+      const badgeR = 11;
       const bx = x + badgeR + 2;
       const by = y - badgeR + 2;
 
       ctx.globalAlpha = 1;
       ctx.beginPath();
       ctx.arc(bx, by, badgeR, 0, Math.PI * 2);
-      ctx.fillStyle = `rgb(${r},${g},${b})`;
+      ctx.fillStyle = config.badgeFill;
       ctx.fill();
+      ctx.strokeStyle = config.badgeStroke;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
 
-      // Dark text — readable on all three effort colors
-      ctx.fillStyle = "rgba(0,0,0,0.85)";
-      ctx.font = `bold ${badgeR}px DM Sans, sans-serif`;
+      ctx.fillStyle = "rgba(0,0,0,0.75)";
+      ctx.font = "bold 10px DM Sans, sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(String(v.num), bx, by + 0.5);
