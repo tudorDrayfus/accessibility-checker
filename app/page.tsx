@@ -227,88 +227,66 @@ function CanvasOverlay({
     const scaleY = H / pageHeight;
     const isAnyActive = activeViolation !== null;
 
-    // ── Pass 1: dark veil over entire screenshot ─────────────────────────
+    // ── Pass 1: dark veil over entire screenshot ──────────────────────────
     ctx.globalCompositeOperation = "source-over";
-    ctx.fillStyle = isAnyActive ? "rgba(0,0,0,0.78)" : "rgba(0,0,0,0.3)";
+    ctx.fillStyle = isAnyActive ? "rgba(0,0,0,0.82)" : "rgba(0,0,0,0.55)";
     ctx.fillRect(0, 0, W, H);
 
-    // ── Pass 2: punch holes to reveal active violation areas ─────────────
-    if (isAnyActive) {
-      ctx.globalCompositeOperation = "destination-out";
-      ctx.globalAlpha = 1;
-      for (const v of violations) {
-        if (hiddenEfforts.has(v.effort) || activeViolation?.id !== v.id) continue;
-        for (const box of v.boxes ?? []) {
-          const x = box.x * scaleX;
-          const y = box.y * scaleY;
-          const w = box.width * scaleX;
-          const h = box.height * scaleY;
-          ctx.beginPath();
-          ctx.roundRect(x, y, w, h, 4);
-          ctx.fill();
-        }
+    // ── Pass 2: punch holes — fully reveal selected, subtly reveal others ─
+    ctx.globalCompositeOperation = "destination-out";
+    for (const v of violations) {
+      if (hiddenEfforts.has(v.effort)) continue;
+      const isActive = activeViolation?.id === v.id;
+      // idle: slight reveal so areas stand out without colour
+      // active: full reveal for selected, near-invisible for others
+      ctx.globalAlpha = !isAnyActive ? 0.32 : isActive ? 1 : 0.1;
+      for (const box of v.boxes ?? []) {
+        const x = box.x * scaleX;
+        const y = box.y * scaleY;
+        const w = box.width * scaleX;
+        const h = box.height * scaleY;
+        ctx.beginPath();
+        ctx.roundRect(x, y, w, h, 4);
+        ctx.fill();
       }
-      ctx.globalCompositeOperation = "source-over";
-      ctx.globalAlpha = 1;
     }
+    ctx.globalCompositeOperation = "source-over";
+    ctx.globalAlpha = 1;
 
-    // ── Pass 3: strokes + number badges ──────────────────────────────────
+    // ── Pass 3: number badges only (no strokes) ───────────────────────────
     for (const v of violations) {
       if (hiddenEfforts.has(v.effort)) continue;
       const config = effortConfig[v.effort];
       const isActive = activeViolation?.id === v.id;
       const [r, g, b] = config.strokeRgb;
+      const box = (v.boxes ?? [])[0];
+      if (!box) continue;
 
-      for (let i = 0; i < (v.boxes ?? []).length; i++) {
-        const box = v.boxes[i];
-        const x = box.x * scaleX;
-        const y = box.y * scaleY;
-        const w = box.width * scaleX;
-        const h = box.height * scaleY;
+      const x = box.x * scaleX;
+      const y = box.y * scaleY;
+      const badgeR = 11;
+      const bx = x + badgeR + 2;
+      const by = y - badgeR + 2;
 
-        if (isActive) {
-          ctx.strokeStyle = `rgba(${r},${g},${b},0.9)`;
-          ctx.lineWidth = 2;
-        } else if (isAnyActive) {
-          ctx.strokeStyle = `rgba(${r},${g},${b},0.3)`;
-          ctx.lineWidth = 0.75;
-        } else {
-          ctx.strokeStyle = `rgba(${r},${g},${b},0.55)`;
-          ctx.lineWidth = 1;
-        }
+      ctx.globalAlpha = isAnyActive && !isActive ? 0.35 : 1;
+      ctx.shadowColor = "rgba(0,0,0,0.7)";
+      ctx.shadowBlur = 6;
+      ctx.beginPath();
+      ctx.arc(bx, by, badgeR, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(0,0,0,0.9)";
+      ctx.fill();
 
-        ctx.beginPath();
-        ctx.roundRect(x, y, w, h, 4);
-        ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = `rgba(${r},${g},${b},0.7)`;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
 
-        // Number badge on first box only
-        if (i === 0) {
-          const badgeR = 11;
-          const bx = x + badgeR + 2;
-          const by = y - badgeR + 2;
-          const alpha = isAnyActive && !isActive ? 0.4 : 1;
-
-          ctx.globalAlpha = alpha;
-          ctx.shadowColor = "rgba(0,0,0,0.6)";
-          ctx.shadowBlur = 6;
-          ctx.beginPath();
-          ctx.arc(bx, by, badgeR, 0, Math.PI * 2);
-          ctx.fillStyle = "rgba(0,0,0,0.88)";
-          ctx.fill();
-
-          ctx.shadowBlur = 0;
-          ctx.strokeStyle = `rgba(${r},${g},${b},0.7)`;
-          ctx.lineWidth = 1.5;
-          ctx.stroke();
-
-          ctx.fillStyle = "#ffffff";
-          ctx.font = `bold ${badgeR}px DM Sans, sans-serif`;
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          ctx.fillText(String(v.num), bx, by + 0.5);
-          ctx.globalAlpha = 1;
-        }
-      }
+      ctx.fillStyle = "#ffffff";
+      ctx.font = `bold ${badgeR}px DM Sans, sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(String(v.num), bx, by + 0.5);
+      ctx.globalAlpha = 1;
     }
   }, [violations, activeViolation, hiddenEfforts, pageWidth, pageHeight]);
 
@@ -402,6 +380,15 @@ export default function Home() {
       return next;
     });
   }
+
+  // Auto-select first violation when results arrive
+  useEffect(() => {
+    if (violations.length > 0) {
+      setActiveViolation({ ...violations[0], num: 1 });
+    } else {
+      setActiveViolation(null);
+    }
+  }, [violations]);
 
   // Auto-scroll left panel to show active violation (expanded)
   useEffect(() => {
