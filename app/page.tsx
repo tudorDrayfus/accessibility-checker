@@ -243,8 +243,8 @@ function CanvasOverlay({
       const x = box.x * scaleX;
       const y = box.y * scaleY;
       const badgeSize = 22;
-      const bx = x + badgeSize / 2 + 2;
-      const by = y - badgeSize / 2 + 2;
+      const bx = Math.max(badgeSize / 2 + 2, x + badgeSize / 2 + 2);
+      const by = Math.max(badgeSize / 2 + 2, y - badgeSize / 2 + 2);
 
       ctx.globalAlpha = 1;
       ctx.beginPath();
@@ -893,16 +893,18 @@ export default function Home() {
             {/* Screenshot + canvas overlay */}
             <div
               ref={screenshotRef}
-              className="relative w-[75%] mx-auto rounded-lg overflow-hidden border border-white/10 shadow-2xl"
+              className="relative w-[75%] mx-auto mt-8 rounded-lg border border-white/10 shadow-2xl"
               style={{ aspectRatio: `${pageWidth} / ${pageHeight}` }}
               onClick={() => setActiveViolation(null)}
             >
-              <img
-                src={`data:image/jpeg;base64,${screenshot}`}
-                alt="Page screenshot"
-                className="w-full h-full object-cover object-top"
-                style={{ display: "block" }}
-              />
+              <div className="absolute inset-0 overflow-hidden rounded-lg">
+                <img
+                  src={`data:image/jpeg;base64,${screenshot}`}
+                  alt="Page screenshot"
+                  className="w-full h-full object-cover object-top"
+                  style={{ display: "block" }}
+                />
+              </div>
               <CanvasOverlay
                 violations={numberedViolations}
                 activeViolation={activeViolation}
