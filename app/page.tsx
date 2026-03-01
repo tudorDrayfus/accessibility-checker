@@ -514,42 +514,47 @@ export default function Home() {
                 <p className={`text-sm font-medium leading-snug ${isActive ? "text-white" : "text-zinc-200"}`}>
                   {v.title}
                 </p>
-                <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                  <span className="text-zinc-400 text-sm">
-                    {v.category}{v.nodes > 1 ? ` · ${v.nodes} elements` : ""}
-                  </span>
-                  {showEffortPill && (
-                    <span className={`text-xs px-1.5 py-0.5 rounded font-medium leading-none ${config.badge}`}>
-                      {v.effort === "Quick win" ? "Quick" : v.effort}
+                {!isActive && (
+                  <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                    <span className="text-zinc-400 text-sm">
+                      {v.category}{v.nodes > 1 ? ` · ${v.nodes} elements` : ""}
                     </span>
-                  )}
-                </div>
+                    {showEffortPill && (
+                      <span className={`text-xs px-1.5 py-0.5 rounded font-medium leading-none ${config.badge}`}>
+                        {v.effort === "Quick win" ? "Quick" : v.effort}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
               <span className={`chevron text-zinc-400 flex-shrink-0 text-[28px] leading-none -mt-1 ${isActive ? "open" : ""}`}>›</span>
             </div>
 
             {isActive && (
-              <div className="mt-3 ml-6 select-text" onClick={(e) => e.stopPropagation()}>
-                <p className="text-zinc-300 text-sm leading-relaxed mb-3">{v.why}</p>
-                <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-lg px-3 py-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-emerald-300 text-sm font-semibold uppercase tracking-wider">How to fix</span>
-                    <CopyButton text={copyText} />
-                  </div>
-                  <p className="text-zinc-200 text-sm leading-relaxed">{v.fix}</p>
+              <div className="mt-3 ml-7 select-text" onClick={(e) => e.stopPropagation()}>
+                <p className="text-zinc-400 text-sm mb-1">
+                  {v.category}{v.nodes > 1 ? ` · ${v.nodes} elements` : ""}
+                </p>
+                <span className={`inline-block text-xs px-1.5 py-0.5 rounded font-medium leading-none mb-4 ${config.badge}`}>
+                  {v.effort === "Quick win" ? "Quick" : v.effort}
+                </span>
+                <p className="text-zinc-300 text-sm leading-relaxed mb-4">{v.why}</p>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-emerald-300 text-sm font-semibold uppercase tracking-[0.7px]">
+                    Fix {v.effortTime}
+                  </span>
+                  <CopyButton text={copyText} />
                 </div>
-                <div className="flex items-center justify-between mt-2">
-                  <p className="text-zinc-400 text-sm">Effort: {v.effortTime}</p>
-                  <a
-                    href={v.wcagUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-zinc-300 hover:text-white transition text-sm underline underline-offset-2"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    WCAG guideline
-                  </a>
-                </div>
+                <p className="text-zinc-200 text-sm leading-relaxed mb-4">{v.fix}</p>
+                <a
+                  href={v.wcagUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-zinc-300 hover:text-white transition text-sm underline underline-offset-2"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  WCAG guideline
+                </a>
               </div>
             )}
           </button>
@@ -707,36 +712,25 @@ export default function Home() {
               </form>
             </div>
 
-            {/* Summary */}
-            <div className="px-4 py-4 border-b border-white/8 flex items-center justify-between">
-              <div>
-                <p className="text-white text-3xl font-light leading-none" style={{ fontFamily: "'DM Serif Display', serif" }}>
-                  {total} issues
-                </p>
-                <p className="text-zinc-400 text-sm truncate max-w-[220px] mt-0.5">{scannedUrl}</p>
-              </div>
-              <div className="relative w-[72px] h-[72px] flex-shrink-0">
-                <svg width="72" height="72" viewBox="0 0 72 72">
-                  <defs>
-                    <linearGradient id="dialGrad" x1="0" y1="0" x2="1" y2="1">
-                      <stop offset="0%" stopColor={scoreColor} />
-                      <stop offset="100%" stopColor={scoreColor} />
-                    </linearGradient>
-                  </defs>
-                  <circle cx="36" cy="36" r="28" fill="none" stroke="#222" strokeWidth="6" />
-                  <circle
-                    cx="36" cy="36" r="28"
-                    fill="none"
-                    stroke="url(#dialGrad)"
-                    strokeWidth="6"
-                    strokeLinecap="round"
-                    strokeDasharray={`${(score / 100) * 175.9} 175.9`}
-                    style={{ transform: "rotate(-90deg)", transformOrigin: "50% 50%" }}
-                  />
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
-                  <span className="text-white text-base font-semibold leading-none">{score}</span>
-                  <span className="text-zinc-500 text-[9px] leading-none uppercase tracking-wide">score</span>
+            {/* Summary - Score */}
+            <div className="px-5 pt-5 pb-4 border-b border-white/8">
+              <div className="flex items-end gap-6">
+                <div>
+                  <p
+                    className="leading-none tabular-nums"
+                    style={{ fontFamily: "'DM Serif Display', serif", fontSize: "64px", color: scoreColor, lineHeight: "64px" }}
+                  >
+                    {score}
+                  </p>
+                  <p className="text-white/50 text-2xl leading-none mt-1">of 100</p>
+                </div>
+                <div className="flex-1 pb-2">
+                  <div className="relative h-4 rounded-full overflow-hidden bg-white/5">
+                    <div
+                      className="absolute left-0 top-0 h-full rounded-l-full transition-all duration-500"
+                      style={{ width: `${score}%`, backgroundColor: scoreColor }}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -748,8 +742,8 @@ export default function Home() {
             )}
 
             {/* Sort toggle */}
-            <div className="px-4 py-2 border-b border-white/8 flex items-center justify-between flex-shrink-0">
-              <span className="text-zinc-500 text-xs">Order by</span>
+            <div className="px-4 py-2.5 border-b border-white/8 flex items-center justify-between flex-shrink-0">
+              <span className="text-white/70 text-sm">{total} issues found</span>
               <div className="flex bg-white/[0.06] rounded-lg p-0.5">
                 {(["position", "impact"] as const).map((mode) => (
                   <button
