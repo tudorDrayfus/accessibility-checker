@@ -476,17 +476,6 @@ export default function Home() {
 
   const hasResults = total !== null && screenshot;
 
-  // Zoom into the active violation if its bounding box is small
-  const zoomInfo = useMemo(() => {
-    if (!activeViolation) return null;
-    const box = activeViolation.boxes?.[0];
-    if (!box) return null;
-    const isSmall = box.width < pageWidth * 0.25 || box.height < pageHeight * 0.2;
-    if (!isSmall) return null;
-    const cx = ((box.x + box.width / 2) / pageWidth) * 100;
-    const cy = ((box.y + box.height / 2) / pageHeight) * 100;
-    return { cx, cy, scale: 2 };
-  }, [activeViolation, pageWidth, pageHeight]);
   const score = Math.max(0, 100 - (total ?? 0) * 5);
   const scoreColor = score > 60 ? "rgb(26, 128, 90)" : score > 30 ? "#c8854a" : "#f87171";
   const scoreColorLight = score > 60 ? "#377b5b" : score > 30 ? "#d68454" : "#e95b5b";
@@ -908,31 +897,21 @@ export default function Home() {
               style={{ aspectRatio: `${pageWidth} / ${pageHeight}` }}
               onClick={() => setActiveViolation(null)}
             >
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  transform: zoomInfo ? `scale(${zoomInfo.scale})` : "scale(1)",
-                  transformOrigin: zoomInfo ? `${zoomInfo.cx}% ${zoomInfo.cy}%` : "center center",
-                  transition: "transform 0.35s ease, transform-origin 0.35s ease",
-                }}
-              >
-                <img
-                  src={`data:image/jpeg;base64,${screenshot}`}
-                  alt="Page screenshot"
-                  className="w-full h-full object-cover object-top"
-                  style={{ display: "block" }}
-                />
-                <CanvasOverlay
-                  violations={numberedViolations}
-                  activeViolation={activeViolation}
-                  hiddenEfforts={hiddenEfforts}
-                  pageWidth={pageWidth}
-                  pageHeight={pageHeight}
-                  showCanvas={showCanvas}
-                  onViolationClick={setActiveViolation}
-                />
-              </div>
+              <img
+                src={`data:image/jpeg;base64,${screenshot}`}
+                alt="Page screenshot"
+                className="w-full h-full object-cover object-top"
+                style={{ display: "block" }}
+              />
+              <CanvasOverlay
+                violations={numberedViolations}
+                activeViolation={activeViolation}
+                hiddenEfforts={hiddenEfforts}
+                pageWidth={pageWidth}
+                pageHeight={pageHeight}
+                showCanvas={showCanvas}
+                onViolationClick={setActiveViolation}
+              />
             </div>
 
             <p className="text-zinc-400 text-xs mt-3 text-center">
