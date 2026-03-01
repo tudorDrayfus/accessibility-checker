@@ -177,27 +177,22 @@ function CanvasOverlay({
     const canvas = canvasRef.current;
     const container = containerRef.current;
     if (!canvas || !container) return;
-    if (!showCanvas) {
-      const dpr = window.devicePixelRatio || 1;
-      const rect = container.getBoundingClientRect();
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
-      canvas.style.width = `${rect.width}px`;
-      canvas.style.height = `${rect.height}px`;
-      const ctx = canvas.getContext("2d");
-      if (ctx) ctx.clearRect(0, 0, rect.width, rect.height);
-      return;
-    }
 
     const dpr = window.devicePixelRatio || 1;
-    const rect = container.getBoundingClientRect();
-    const W = rect.width;
-    const H = rect.height;
+    const W = container.offsetWidth;
+    const H = container.offsetHeight;
 
-    canvas.width = W * dpr;
-    canvas.height = H * dpr;
-    canvas.style.width = `${W}px`;
-    canvas.style.height = `${H}px`;
+    // Only update buffer dimensions when they actually change —
+    // avoids triggering ResizeObserver on every draw call.
+    if (canvas.width !== W * dpr) canvas.width = W * dpr;
+    if (canvas.height !== H * dpr) canvas.height = H * dpr;
+    // Let CSS (w-full h-full) handle visual sizing — never set style.width/height.
+
+    if (!showCanvas) {
+      const ctx = canvas.getContext("2d");
+      if (ctx) ctx.clearRect(0, 0, W, H);
+      return;
+    }
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
@@ -264,15 +259,19 @@ function CanvasOverlay({
     }
   }, [violations, activeViolation, hiddenEfforts, pageWidth, pageHeight, showCanvas]);
 
+  // Keep a stable ref so the ResizeObserver never needs to be recreated.
+  const drawRef = useRef(draw);
+  useEffect(() => { drawRef.current = draw; }, [draw]);
+
   useEffect(() => {
     draw();
   }, [draw]);
 
   useEffect(() => {
-    const ro = new ResizeObserver(() => draw());
+    const ro = new ResizeObserver(() => drawRef.current());
     if (containerRef.current) ro.observe(containerRef.current);
     return () => ro.disconnect();
-  }, [draw]);
+  }, []); // created once — drawRef always points to latest draw
 
   function hitTest(mx: number, my: number, rect: DOMRect): NumberedViolation | null {
     const scaleX = rect.width / pageWidth;
