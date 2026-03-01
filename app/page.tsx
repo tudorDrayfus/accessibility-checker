@@ -32,7 +32,7 @@ const effortConfig = {
     overlay: "rgba(29, 78, 216, 0.12)",
     stroke: "#1e3a8a",
     strokeRgb: [96, 165, 250],
-    activeBg: "bg-blue-500/10",
+    activeBg: "bg-blue-500/5",
     accentBar: "bg-blue-400",
     numBg: "bg-blue-500/20 text-blue-300",
     badgeFill: "rgb(173, 210, 252)",   // sky blue pastel
@@ -45,7 +45,7 @@ const effortConfig = {
     overlay: "rgba(195, 113, 37, 0.15)",
     stroke: "#995d24",
     strokeRgb: [251, 191, 36],
-    activeBg: "bg-yellow-500/10",
+    activeBg: "bg-yellow-500/5",
     accentBar: "bg-yellow-400",
     numBg: "bg-yellow-500/20 text-yellow-300",
     badgeFill: "rgb(236, 210, 165)",   // warm sand pastel
@@ -58,7 +58,7 @@ const effortConfig = {
     overlay: "rgba(179, 65, 65, 0.15)",
     stroke: "#731e1e",
     strokeRgb: [248, 113, 113],
-    activeBg: "bg-red-500/10",
+    activeBg: "bg-red-500/5",
     accentBar: "bg-red-400",
     numBg: "bg-red-500/20 text-red-300",
     badgeFill: "rgb(77, 14, 86)",   // dusty rose pastel
@@ -498,14 +498,13 @@ export default function Home() {
         className={`violation-row border-b border-white/5 ${isActive ? config.activeBg : ""}`}
       >
         <div className="flex">
-          <div className={`w-0.5 flex-shrink-0 ${isActive ? config.accentBar : "bg-transparent"}`} />
           <button
             onClick={() => setActiveViolation(isActive ? null : v)}
             className="flex-1 text-left px-3 py-4"
           >
             <div className="flex items-start gap-2">
               <span
-                className="flex-shrink-0 w-5 h-5 rounded-lg flex items-center justify-center text-xs font-bold mt-0.5 bg-[#1e1e1e] text-white"
+                className="flex-shrink-0 w-5 h-5 rounded-[4px] flex items-center justify-center text-xs font-bold mt-0.5 bg-[#1e1e1e] text-white"
                 style={{ boxShadow: `0 0 0 1px ${config.stroke}66` }}
               >
                 {v.num}
@@ -515,12 +514,12 @@ export default function Home() {
                   {v.title}
                 </p>
                 {!isActive && (
-                  <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                    <span className="text-zinc-400 text-sm">
+                  <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                    <span className="text-zinc-400 text-[13px]">
                       {v.category}{v.nodes > 1 ? ` · ${v.nodes} elements` : ""}
                     </span>
                     {showEffortPill && (
-                      <span className={`text-xs px-1.5 py-0.5 rounded font-medium leading-none ${config.badge}`}>
+                      <span className={`text-xs px-1.5 py-0.5 rounded-[4px] font-medium leading-none ${config.badge}`}>
                         {v.effort === "Quick win" ? "Quick" : v.effort}
                       </span>
                     )}
@@ -535,7 +534,7 @@ export default function Home() {
                 <p className="text-zinc-400 text-sm mb-1">
                   {v.category}{v.nodes > 1 ? ` · ${v.nodes} elements` : ""}
                 </p>
-                <span className={`inline-block text-xs px-1.5 py-0.5 rounded font-medium leading-none mb-4 ${config.badge}`}>
+                <span className={`inline-block text-xs px-1.5 py-0.5 rounded-[4px] font-medium leading-none mb-4 ${config.badge}`}>
                   {v.effort === "Quick win" ? "Quick" : v.effort}
                 </span>
                 <p className="text-zinc-300 text-sm leading-relaxed mb-4">{v.why}</p>
@@ -694,12 +693,12 @@ export default function Home() {
                   onChange={setDomain}
                   history={urlHistory}
                   placeholder="Enter URL"
-                  inputClassName="w-full bg-white/5 text-white border border-white/15 rounded-lg px-3 py-2 text-sm outline-none focus:border-white/40 transition placeholder-zinc-500"
+                  inputClassName="w-full bg-white/5 text-white border border-white/15 rounded-[4px] px-3 py-2 text-sm outline-none focus:border-white/40 transition placeholder-zinc-500"
                 />
                 <button
                   type="submit"
                   disabled={loading}
-                  className={`font-semibold px-3 py-2 rounded-lg transition text-sm whitespace-nowrap flex-shrink-0 ${loading ? "bg-zinc-800 text-white cursor-default" : "bg-white text-black hover:bg-zinc-100 disabled:opacity-40"}`}
+                  className={`font-semibold px-3 py-2 rounded-[4px] transition text-sm whitespace-nowrap flex-shrink-0 text-white ${loading ? "bg-zinc-700 cursor-default opacity-100" : "bg-white !text-black hover:bg-zinc-100 disabled:opacity-40"}`}
                 >
                   {loading ? (
                     <span className="flex gap-[3px] items-center px-0.5">
@@ -722,9 +721,9 @@ export default function Home() {
                   >
                     {score}
                   </p>
-                  <p className="text-white/50 text-2xl leading-none mt-1">of 100</p>
+                  <p className="text-white/50 text-2xl leading-none mt-1">/ 100</p>
                 </div>
-                <div className="flex-1 pb-2">
+                <div className="w-[88px] pb-2 flex-shrink-0">
                   <div className="relative h-4 rounded-full overflow-hidden bg-white/5">
                     <div
                       className="absolute left-0 top-0 h-full rounded-l-full transition-all duration-500"
@@ -736,7 +735,7 @@ export default function Home() {
             </div>
 
             {error && (
-              <div className="mx-3 my-2 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
+              <div className="mx-3 my-2 bg-red-500/10 border border-red-500/30 rounded-[4px] px-3 py-2">
                 <p className="text-red-300 text-sm">{error}</p>
               </div>
             )}
@@ -744,12 +743,12 @@ export default function Home() {
             {/* Sort toggle */}
             <div className="px-4 py-2.5 border-b border-white/8 flex items-center justify-between flex-shrink-0">
               <span className="text-white/70 text-sm">{total} issues found</span>
-              <div className="flex bg-white/[0.06] rounded-lg p-0.5">
+              <div className="flex bg-white/[0.06] rounded-[6px] p-0.5">
                 {(["position", "impact"] as const).map((mode) => (
                   <button
                     key={mode}
                     onClick={() => setSortMode(mode)}
-                    className={`text-xs px-2.5 py-1 rounded-md transition-all ${
+                    className={`text-xs px-2.5 py-1 rounded-[4px] transition-all ${
                       sortMode === mode ? "bg-white/15 text-white" : "text-zinc-500 hover:text-zinc-300"
                     }`}
                   >
@@ -775,7 +774,7 @@ export default function Home() {
                               <span className="text-zinc-200 text-sm font-semibold uppercase tracking-wider">Page-level issues</span>
                               <span className="text-zinc-400 text-sm">No specific element location</span>
                             </div>
-                            <span className="text-sm px-2 py-0.5 rounded-lg font-medium bg-zinc-500/10 text-zinc-400">
+                            <span className="text-sm px-2 py-0.5 rounded-[4px] font-medium bg-zinc-500/10 text-zinc-400">
                               {noLoc.length}
                             </span>
                           </div>
@@ -797,7 +796,7 @@ export default function Home() {
                           <span className="text-zinc-200 text-sm font-semibold uppercase tracking-wider">{config.label}</span>
                           <span className="text-zinc-400 text-sm">{config.sublabel}</span>
                         </div>
-                        <span className={`text-sm px-2 py-0.5 rounded-lg font-medium ${config.badge}`}>
+                        <span className={`text-sm px-2 py-0.5 rounded-[4px] font-medium ${config.badge}`}>
                           {group.length}
                         </span>
                       </div>
@@ -837,7 +836,7 @@ export default function Home() {
             <div className="flex items-center gap-2 mb-4 flex-wrap">
               <button
                 onClick={() => setShowCanvas((v) => !v)}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all text-sm ${
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-[4px] border transition-all text-sm ${
                   showCanvas
                     ? "border-white/20 bg-white/[0.08] text-zinc-200"
                     : "border-white/10 bg-white/[0.03] text-zinc-500"
@@ -855,7 +854,7 @@ export default function Home() {
                   <button
                     key={e}
                     onClick={() => toggleEffort(e)}
-                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all text-sm ${
+                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-[4px] border transition-all text-sm ${
                       isHidden
                         ? "border-white/10 bg-white/[0.02] text-zinc-600"
                         : "border-white/10 bg-white/[0.04] text-zinc-300"
