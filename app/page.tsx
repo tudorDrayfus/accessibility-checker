@@ -196,7 +196,7 @@ function CanvasOverlay({
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    ctx.scale(dpr, dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // absolute — never compounds across draws
     ctx.clearRect(0, 0, W, H);
 
     const scaleX = W / pageWidth;
