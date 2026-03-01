@@ -1,0 +1,45 @@
+[   28891ms] [ERROR] In HTML, %s cannot be a descendant of <%s>.
+This will cause a hydration error.%s <button> button 
+
+  ...
+    <RedirectBoundary>
+      <RedirectErrorBoundary router={{...}}>
+        <InnerLayoutRouter url="/" tree={[...]} params={{}} cacheNode={{rsc:<Fragment>, ...}} segmentPath={[...]} ...>
+          <SegmentViewNode type="page" pagePath="/Documents...">
+            <SegmentTrieNode>
+            <ClientPageRoot Component={function Home} serverProvidedParams={{...}}>
+              <Home params={Promise} searchParams={Promise}>
+                <main className="min-h-scre..." style={{...}}>
+                  <style>
+                  <div className="relative f...">
+                    <div className="w-[360px] ...">
+                      <div>
+                      <div>
+                      <div>
+                      <div ref={{...}} className="flex-1 ove...">
+                        <div data-violation-id="aria-requi..." className="violation-...">
+                          <div className="flex">
+                            <div>
+>                           <button onClick={function onClick} className="flex-1 text-left px-3 py-4">
+                              <div>
+                              <div className="mt-3 ml-6 ..." onClick={function onClick}>
+                                <p>
+                                <div className="bg-emerald...">
+                                  <div className="flex items...">
+                                    <span>
+                                    <CopyButton text={"ARIA ele..."}>
+>                                     <button
+>                                       onClick={function onClick}
+>                                       className="flex items-center gap-1 text-zinc-400 hover:text-white transition t..."
+>                                     >
+                                  ...
+                                ...
+                        ...
+                        ...
+                      ...
+                    ...
+          ...
+        ...
+ @ http://localhost:3000/_next/static/chunks/72bb9_next_dist_df1108d5._.js:3127
+[   28891ms] [ERROR] <%s> cannot contain a nested %s.
+See this log for the ancestor stack trace. button <button> @ http://localhost:3000/_next/static/chunks/72bb9_next_dist_df1108d5._.js:3127

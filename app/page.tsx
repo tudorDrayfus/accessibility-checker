@@ -584,34 +584,32 @@ export default function Home() {
       {/* LANDING */}
       {!hasResults && (
         <div className="min-h-screen flex flex-col items-center justify-center px-4 py-16">
-          <div className="w-full max-w-xl">
-            <div className="mb-12 fade-up">
-              <h1 className="text-white text-5xl mb-3 leading-tight" style={{ fontFamily: "'DM Serif Display', serif" }}>
-                Is your website ready<br />
-                for the<br />
-                <em className="text-zinc-400" style={{ fontStyle: "italic" }}>European Accessibility Act?</em>
+          <div className="w-full max-w-[576px]">
+            <div className="mb-16 fade-up">
+              <h1 className="text-white text-5xl mb-4 leading-[60px]" style={{ fontFamily: "'DM Serif Display', serif" }}>
+                Let&apos;s make the web more accessible
               </h1>
-              <p className="text-zinc-300 text-base leading-relaxed max-w-md">
-                Paste any URL and get a list of quick wins and failures, fast..ish
+              <p className="text-[#d4d4d8] text-base leading-[26px]">
+                Paste any URL and check your website against WCAG guidelines.
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="mb-10 fade-up-1">
+            <form onSubmit={handleSubmit} className="mb-8 fade-up-1">
               <div className="flex gap-2">
                 <UrlInput
                   value={domain}
                   onChange={setDomain}
                   history={urlHistory}
-                  placeholder="Enter URL"
-                  inputClassName="w-full bg-white/5 text-white border border-white/15 rounded-lg px-5 py-4 text-sm outline-none focus:border-white/40 transition placeholder-zinc-500"
+                  placeholder="tarom.ro"
+                  inputClassName="w-full h-[54px] bg-white/5 text-white border border-white/40 rounded-[4px] px-5 text-sm outline-none focus:border-white/60 transition placeholder-[#71717b]"
                 />
                 <button
                   type="submit"
                   disabled={loading}
-                  className={`font-semibold px-7 py-4 rounded-lg transition text-sm whitespace-nowrap ${loading ? "bg-zinc-800 text-white cursor-default" : "bg-white text-black hover:bg-zinc-100 disabled:opacity-40"}`}
+                  className="font-semibold px-7 h-[54px] rounded-[4px] transition text-sm whitespace-nowrap bg-[#27272a] text-white hover:bg-[#3f3f46] disabled:opacity-40"
                 >
                   {loading ? (
-                    <span className="flex items-center gap-2.5 min-w-[140px] justify-center">
+                    <span className="flex items-center gap-2.5 min-w-[180px] justify-center">
                       <span className="flex gap-[3px] items-center">
                         <span className="w-1 h-1 rounded-full bg-white" style={{ animation: "bounce-dot 1s 0ms infinite ease-in-out" }} />
                         <span className="w-1 h-1 rounded-full bg-white" style={{ animation: "bounce-dot 1s 160ms infinite ease-in-out" }} />
@@ -627,44 +625,38 @@ export default function Home() {
             </form>
 
             {error && (
-              <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-5 py-4 mb-6 fade-up">
+              <div className="bg-red-500/10 border border-red-500/30 rounded-[4px] px-5 py-4 mb-6 fade-up">
                 <p className="text-red-300 text-sm">{error}</p>
               </div>
             )}
 
             <div className="grid grid-cols-2 gap-3 fade-up-2">
-              <div className="bg-white/[0.04] border border-white/10 rounded-lg p-4">
+              <div className="bg-white/[0.04] border border-white/10 rounded-[4px] pt-[17px] px-[17px] pb-px">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
-                  <span className="text-zinc-200 text-xs font-semibold uppercase tracking-wider">EU — EAA 2025</span>
+                  <img src="https://www.figma.com/api/mcp/asset/927202cb-3c4c-4d3e-b832-008e7cfc16f7" alt="EU flag" className="w-4 h-4 object-cover flex-shrink-0" />
+                  <span className="text-[#e4e4e7] text-xs font-semibold uppercase tracking-[0.6px]">EU — EAA 2025</span>
                 </div>
-                <p className="text-zinc-300 text-xs leading-relaxed">
+                <p className="text-[#d4d4d8] text-xs leading-[19.5px]">
                   European Accessibility Act in force since <span className="text-white font-medium">June 2025</span>. All digital products sold in the EU must comply or face fines.
                 </p>
               </div>
-              <div className="bg-white/[0.04] border border-white/10 rounded-lg p-4">
+              <div className="bg-white/[0.04] border border-white/10 rounded-[4px] pt-[17px] px-[17px] pb-px">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
-                  <span className="text-zinc-200 text-xs font-semibold uppercase tracking-wider">US — ADA Title III</span>
+                  <img src="https://www.figma.com/api/mcp/asset/efe1b2d2-74f4-43be-bb99-8e2218a09ffa" alt="US flag" className="w-4 h-4 object-cover flex-shrink-0" />
+                  <span className="text-[#e4e4e7] text-xs font-semibold uppercase tracking-[0.6px]">US — ADA Title III</span>
                 </div>
-                <p className="text-zinc-300 text-xs leading-relaxed">
+                <p className="text-[#d4d4d8] text-xs leading-[19.5px]">
                   US courts consistently rule websites must comply with ADA. <span className="text-white font-medium">Thousands of lawsuits</span> filed annually.
                 </p>
               </div>
             </div>
 
-            <p className="mt-4 text-zinc-400 text-xs text-center fade-up-2">
-              Both laws reference <span className="text-zinc-200">WCAG 2.1 AA</span> as the compliance standard.
+            <p className="mt-8 text-[#9f9fa9] text-xs text-center leading-[16px] fade-up-2 max-w-[430px] mx-auto">
+              Both laws reference <span className="text-[#e4e4e7]">WCAG 2.1 AA</span> as the compliance standard. Please double check results as I am working on improving this.{" "}
+              <a href="https://www.linkedin.com/in/tudor-teisanu-7b08a4b2/" target="_blank" rel="noopener noreferrer" className="underline decoration-solid hover:text-[#e4e4e7] transition">
+                Any feedback?
+              </a>
             </p>
-
-            <div className="mt-10 flex justify-center fade-up-2">
-              <p className="text-zinc-400 text-xs text-center">
-                Please double check results as I am working on improving this.{" "}
-                <a href="https://www.linkedin.com/in/tudor-teisanu-7b08a4b2/" target="_blank" rel="noopener noreferrer" className="text-zinc-200 underline hover:text-white transition">
-                  Any feedback?
-                </a>
-              </p>
-            </div>
           </div>
         </div>
       )}
