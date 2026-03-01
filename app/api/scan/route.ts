@@ -139,6 +139,7 @@ export async function POST(req: NextRequest) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url }),
+        signal: AbortSignal.timeout(55000),
       }),
       fetchWaveViolations(url),
     ]);
