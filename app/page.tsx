@@ -594,7 +594,7 @@ export default function Home() {
                 Let&apos;s make the web more accessible
               </h1>
               <p className="text-[#d4d4d8] text-base leading-[26px]">
-                Paste any URL and check your website against WCAG guidelines.
+                Enter any URL and to check it against WCAG guidelines.
               </p>
             </div>
 
