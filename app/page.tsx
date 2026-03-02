@@ -599,7 +599,7 @@ export default function Home() {
           <div className="w-full max-w-[576px]">
             <div className="mb-16 fade-up">
               <h1 className="text-white text-5xl mb-4 leading-[60px]" style={{ fontFamily: "'DM Serif Display', serif" }}>
-                Let&apos;s make the web more accessible
+                Make your website accessible to everyone.
               </h1>
               <p className="text-[#d4d4d8] text-base leading-[26px]">
                 Enter any URL and to check it against WCAG guidelines.
