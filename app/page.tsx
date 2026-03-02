@@ -599,7 +599,7 @@ export default function Home() {
           <div className="w-full max-w-[576px]">
             <div className="mb-16 fade-up">
               <h1 className="text-white text-5xl mb-4 leading-[60px]" style={{ fontFamily: "'DM Serif Display', serif" }}>
-                Make your website accessible to everyone.
+                Make your website accessible for everyone.
               </h1>
               <p className="text-[#d4d4d8] text-base leading-[26px]">
                 Enter any URL and to check it against WCAG guidelines.
@@ -724,25 +724,25 @@ export default function Home() {
               <div className="flex items-center gap-3">
                 {/* Circular gauge */}
                 <svg width="62" height="62" viewBox="0 0 62 62" className="flex-shrink-0">
-                  <circle cx="31" cy="31" r="25" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="5" />
+                  <circle cx="31" cy="31" r="22" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="10" />
                   <circle
-                    cx="31" cy="31" r="25"
+                    cx="31" cy="31" r="22"
                     fill="none"
                     stroke={scoreColor}
-                    strokeWidth="5"
+                    strokeWidth="10"
                     strokeLinecap="round"
-                    strokeDasharray={`${(2 * Math.PI * 25).toFixed(2)}`}
-                    strokeDashoffset={`${(2 * Math.PI * 25 * (1 - score / 100)).toFixed(2)}`}
+                    strokeDasharray={`${(2 * Math.PI * 22).toFixed(2)}`}
+                    strokeDashoffset={`${(2 * Math.PI * 22 * (1 - score / 100)).toFixed(2)}`}
                     transform="rotate(-90 31 31)"
                     style={{ transition: "stroke-dashoffset 0.5s ease" }}
                   />
                 </svg>
                 {/* Score number */}
-                <p className="leading-none" style={{ fontFamily: "'DM Serif Display', serif", fontSize: "72px", color: scoreColor }}>
+                <p className="leading-none" style={{ fontFamily: "'DM Serif Display', serif", fontSize: "80px", color: scoreColor }}>
                   {score}
                 </p>
                 {/* Issues count */}
-                <div className="flex flex-col leading-none gap-1">
+                <div className="flex flex-col leading-none gap-0.5">
                   <p style={{ fontFamily: "'DM Serif Display', serif", fontSize: "48px", color: "white", lineHeight: "1" }}>
                     {total}
                   </p>
