@@ -154,7 +154,7 @@ export async function POST(req: NextRequest) {
     // Filter out page-level container boxes (html/body/main spanning most of the page)
     // — these create huge overlays that obscure the real content.
     const axeViolationIds = new Set<string>();
-    const translated = data.violations.map((v: any) => {
+    const translated = (data.violations ?? []).map((v: any) => {
       axeViolationIds.add(v.id);
       const filteredBoxes = (v.boxes ?? []).filter(
         (b: any) => !(b.width >= 1200 && b.height >= 500),
