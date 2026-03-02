@@ -207,19 +207,29 @@ function CanvasOverlay({
     ctx.fillStyle = "rgba(0,0,0,0.70)";
     ctx.fillRect(0, 0, W, H);
 
-    // ── Pass 2: punch holes — fully reveal selected, subtly reveal others ─
+    // ── Pass 2: punch holes — skip boxes that substantially overlap an already-drawn one ─
+    const drawnBoxes: Array<{x: number; y: number; w: number; h: number}> = [];
+    const overlapsDrawn = (sx: number, sy: number, sw: number, sh: number) =>
+      drawnBoxes.some(d => {
+        const ix = Math.max(0, Math.min(sx + sw, d.x + d.w) - Math.max(sx, d.x));
+        const iy = Math.max(0, Math.min(sy + sh, d.y + d.h) - Math.max(sy, d.y));
+        const inter = ix * iy;
+        const smaller = Math.min(sw * sh, d.w * d.h);
+        return smaller > 0 && inter / smaller > 0.4;
+      });
+
     ctx.globalCompositeOperation = "destination-out";
     for (const v of violations) {
       if (hiddenEfforts.has(v.effort)) continue;
       const isActive = activeViolation?.id === v.id;
-      // idle: slight reveal so areas stand out without colour
-      // active: full reveal for selected, near-invisible for others
       ctx.globalAlpha = isActive ? 1 : 0.6;
       for (const box of v.boxes ?? []) {
         const x = box.x * scaleX;
         const y = box.y * scaleY;
         const w = box.width * scaleX;
         const h = box.height * scaleY;
+        if (overlapsDrawn(x, y, w, h)) continue;
+        drawnBoxes.push({ x, y, w, h });
         ctx.beginPath();
         ctx.roundRect(x, y, w, h, 4);
         ctx.fill();
@@ -228,31 +238,31 @@ function CanvasOverlay({
     ctx.globalCompositeOperation = "source-over";
     ctx.globalAlpha = 1;
 
-    // ── Pass 3: number badges — one per box so the number appears on every affected element ──
+    // ── Pass 3: one badge per violation at its first box ─────────────────
     const badgeSize = 22;
     for (const v of violations) {
       if (hiddenEfforts.has(v.effort)) continue;
-      for (const box of v.boxes ?? []) {
-        const x = box.x * scaleX;
-        const y = box.y * scaleY;
-        const bx = Math.max(badgeSize / 2 + 2, x + badgeSize / 2 + 2);
-        const by = Math.max(badgeSize / 2 + 2, y - badgeSize / 2 + 2);
+      const box = (v.boxes ?? [])[0];
+      if (!box) continue;
+      const x = box.x * scaleX;
+      const y = box.y * scaleY;
+      const bx = Math.max(badgeSize / 2 + 2, x + badgeSize / 2 + 2);
+      const by = Math.max(badgeSize / 2 + 2, y - badgeSize / 2 + 2);
 
-        ctx.globalAlpha = 1;
-        ctx.beginPath();
-        ctx.roundRect(bx - badgeSize / 2, by - badgeSize / 2, badgeSize, badgeSize, 4);
-        ctx.fillStyle = "#131313";
-        ctx.fill();
-        ctx.strokeStyle = "rgba(255,255,255,0.75)";
-        ctx.lineWidth = 2;
-        ctx.stroke();
+      ctx.globalAlpha = 1;
+      ctx.beginPath();
+      ctx.roundRect(bx - badgeSize / 2, by - badgeSize / 2, badgeSize, badgeSize, 4);
+      ctx.fillStyle = "#131313";
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,0.75)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
 
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "bold 12px DM Sans, sans-serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(String(v.num), bx, by + 0.5);
-      }
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 12px DM Sans, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(String(v.num), bx, by + 0.5);
     }
   }, [violations, activeViolation, hiddenEfforts, pageWidth, pageHeight, showCanvas]);
 
@@ -563,6 +573,7 @@ export default function Home() {
     <main className="min-h-screen bg-[#131313]" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,opsz,wght@0,18..144,300..900;1,18..144,300..900&display=swap');
         @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
         @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
         @keyframes pulse-dot { 0%,100% { opacity:1; } 50% { opacity:0.2; } }
@@ -714,11 +725,11 @@ export default function Home() {
                 <div>
                   <p
                     className="leading-none tabular-nums"
-                    style={{ fontFamily: "'DM Serif Display', serif", fontSize: "64px", color: scoreColor, lineHeight: "64px" }}
+                    style={{ fontFamily: "'Merriweather', serif", fontSize: "64px", color: scoreColor, lineHeight: "64px" }}
                   >
                     {score}
                   </p>
-                  <p className="text-white/50 text-2xl leading-none mt-1">of 100</p>
+                  <p className="text-white/50 leading-none mt-1" style={{ fontFamily: "'Merriweather', serif", fontSize: "24px" }}>of 100</p>
                 </div>
                 <div className="w-[88px] pb-2 flex-shrink-0">
                   <div className="relative h-4 rounded-full overflow-hidden bg-white/5">
