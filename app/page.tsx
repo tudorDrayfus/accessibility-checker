@@ -618,7 +618,7 @@ export default function Home() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="font-semibold px-7 h-[54px] rounded-[4px] transition text-sm whitespace-nowrap bg-[#27272a] text-white hover:bg-[#3f3f46] disabled:opacity-40"
+                  className="font-semibold px-7 h-[54px] rounded-[4px] transition text-sm whitespace-nowrap bg-[#27272a] text-white hover:bg-[#3f3f46]"
                 >
                   {loading ? (
                     <span className="flex items-center gap-2.5 min-w-[180px] justify-center">
@@ -643,18 +643,18 @@ export default function Home() {
             )}
 
             <div className="grid grid-cols-2 gap-3 fade-up-2">
-              <div className="bg-white/[0.04] border border-white/10 rounded-[4px] pt-[17px] px-[17px] pb-px">
-                <div className="flex items-center gap-2 mb-2">
-                  <img src="https://www.figma.com/api/mcp/asset/927202cb-3c4c-4d3e-b832-008e7cfc16f7" alt="EU flag" className="w-4 h-4 object-cover flex-shrink-0" />
+              <div className="bg-white/[0.04] border border-white/10 rounded-[4px] p-5 pb-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-base leading-none" role="img" aria-label="EU flag">🇪🇺</span>
                   <span className="text-[#e4e4e7] text-xs font-semibold uppercase tracking-[0.6px]">EU — EAA 2025</span>
                 </div>
                 <p className="text-[#d4d4d8] text-xs leading-[19.5px]">
                   European Accessibility Act in force since <span className="text-white font-medium">June 2025</span>. All digital products sold in the EU must comply or face fines.
                 </p>
               </div>
-              <div className="bg-white/[0.04] border border-white/10 rounded-[4px] pt-[17px] px-[17px] pb-px">
-                <div className="flex items-center gap-2 mb-2">
-                  <img src="https://www.figma.com/api/mcp/asset/efe1b2d2-74f4-43be-bb99-8e2218a09ffa" alt="US flag" className="w-4 h-4 object-cover flex-shrink-0" />
+              <div className="bg-white/[0.04] border border-white/10 rounded-[4px] p-5 pb-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-base leading-none" role="img" aria-label="US flag">🇺🇸</span>
                   <span className="text-[#e4e4e7] text-xs font-semibold uppercase tracking-[0.6px]">US — ADA Title III</span>
                 </div>
                 <p className="text-[#d4d4d8] text-xs leading-[19.5px]">
