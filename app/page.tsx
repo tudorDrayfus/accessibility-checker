@@ -720,24 +720,35 @@ export default function Home() {
             </div>
 
             {/* Summary - Score */}
-            <div className="px-5 pt-5 pb-4 border-b border-white/8">
-              <div className="flex items-end gap-6">
-                <div>
-                  <p
-                    className="leading-none tabular-nums"
-                    style={{ fontFamily: "'Merriweather', serif", fontSize: "64px", color: scoreColor, lineHeight: "64px" }}
-                  >
-                    {score}
+            <div className="px-5 pt-5 pb-5 border-b border-white/8">
+              <div className="flex items-center gap-3">
+                {/* Circular gauge */}
+                <svg width="62" height="62" viewBox="0 0 62 62" className="flex-shrink-0">
+                  <circle cx="31" cy="31" r="25" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="5" />
+                  <circle
+                    cx="31" cy="31" r="25"
+                    fill="none"
+                    stroke={scoreColor}
+                    strokeWidth="5"
+                    strokeLinecap="round"
+                    strokeDasharray={`${(2 * Math.PI * 25).toFixed(2)}`}
+                    strokeDashoffset={`${(2 * Math.PI * 25 * (1 - score / 100)).toFixed(2)}`}
+                    transform="rotate(-90 31 31)"
+                    style={{ transition: "stroke-dashoffset 0.5s ease" }}
+                  />
+                </svg>
+                {/* Score number */}
+                <p className="leading-none" style={{ fontFamily: "'DM Serif Display', serif", fontSize: "72px", color: scoreColor }}>
+                  {score}
+                </p>
+                {/* Issues count */}
+                <div className="flex flex-col leading-none gap-1">
+                  <p style={{ fontFamily: "'DM Serif Display', serif", fontSize: "48px", color: "white", lineHeight: "1" }}>
+                    {total}
                   </p>
-                  <p className="text-white/50 leading-none mt-1" style={{ fontFamily: "'Merriweather', serif", fontSize: "24px" }}>of 100</p>
-                </div>
-                <div className="w-[88px] pb-2 flex-shrink-0">
-                  <div className="relative h-4 rounded-full overflow-hidden bg-white/5">
-                    <div
-                      className="absolute left-0 top-0 h-full rounded-l-full transition-all duration-500"
-                      style={{ width: `${score}%`, backgroundColor: scoreColor }}
-                    />
-                  </div>
+                  <p style={{ fontFamily: "'DM Serif Display', serif", fontSize: "18px", color: "rgba(255,255,255,0.5)" }}>
+                    issues
+                  </p>
                 </div>
               </div>
             </div>
