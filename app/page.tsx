@@ -228,34 +228,31 @@ function CanvasOverlay({
     ctx.globalCompositeOperation = "source-over";
     ctx.globalAlpha = 1;
 
-    // ── Pass 3: number badges ─────────────────────────────────────────────
+    // ── Pass 3: number badges — one per box so the number appears on every affected element ──
+    const badgeSize = 22;
     for (const v of violations) {
       if (hiddenEfforts.has(v.effort)) continue;
-      const config = effortConfig[v.effort];
-      const box = (v.boxes ?? [])[0];
-      if (!box) continue;
+      for (const box of v.boxes ?? []) {
+        const x = box.x * scaleX;
+        const y = box.y * scaleY;
+        const bx = Math.max(badgeSize / 2 + 2, x + badgeSize / 2 + 2);
+        const by = Math.max(badgeSize / 2 + 2, y - badgeSize / 2 + 2);
 
-      const x = box.x * scaleX;
-      const y = box.y * scaleY;
-      const badgeSize = 22;
-      const bx = Math.max(badgeSize / 2 + 2, x + badgeSize / 2 + 2);
-      const by = Math.max(badgeSize / 2 + 2, y - badgeSize / 2 + 2);
+        ctx.globalAlpha = 1;
+        ctx.beginPath();
+        ctx.roundRect(bx - badgeSize / 2, by - badgeSize / 2, badgeSize, badgeSize, 4);
+        ctx.fillStyle = "#131313";
+        ctx.fill();
+        ctx.strokeStyle = "rgba(255,255,255,0.75)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
 
-      ctx.globalAlpha = 1;
-      ctx.beginPath();
-      ctx.roundRect(bx - badgeSize / 2, by - badgeSize / 2, badgeSize, badgeSize, 7);
-      ctx.fillStyle = config.badgeFill;
-      ctx.fill();
-      ctx.strokeStyle = config.badgeStroke;
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-
-      ctx.fillStyle = "rgb(18, 18, 18)";
-      ctx.font = "bold 11px DM Sans, sans-serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(String(v.num), bx, by + 0.5);
-      ctx.globalAlpha = 1;
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 12px DM Sans, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(String(v.num), bx, by + 0.5);
+      }
     }
   }, [violations, activeViolation, hiddenEfforts, pageWidth, pageHeight, showCanvas]);
 
@@ -721,7 +718,7 @@ export default function Home() {
                   >
                     {score}
                   </p>
-                  <p className="text-white/50 text-2xl leading-none mt-1">/ 100</p>
+                  <p className="text-white/50 text-2xl leading-none mt-1">of 100</p>
                 </div>
                 <div className="w-[88px] pb-2 flex-shrink-0">
                   <div className="relative h-4 rounded-full overflow-hidden bg-white/5">
@@ -752,7 +749,7 @@ export default function Home() {
                       sortMode === mode ? "bg-white/15 text-white" : "text-zinc-500 hover:text-zinc-300"
                     }`}
                   >
-                    {mode === "position" ? "Position" : "Impact"}
+                    {mode === "position" ? "Position in page" : "Impact"}
                   </button>
                 ))}
               </div>
