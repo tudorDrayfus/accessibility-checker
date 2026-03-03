@@ -485,6 +485,7 @@ export default function Home() {
   const score = Math.max(0, 100 - (total ?? 0) * 5);
   const scoreColor = score > 60 ? "rgb(26, 128, 90)" : score > 30 ? "#c8854a" : "#f87171";
   const scoreColorLight = score > 60 ? "#377b5b" : score > 30 ? "#d68454" : "#e95b5b";
+  const scoreTrackColor = score > 60 ? "rgba(26,128,90,0.12)" : score > 30 ? "rgba(200,133,74,0.12)" : "rgba(248,113,113,0.12)";
   const numberedViolations = useMemo<NumberedViolation[]>(() => {
     if (sortMode === "position") {
       return [...violations]
@@ -721,34 +722,21 @@ export default function Home() {
 
             {/* Summary - Score */}
             <div className="px-5 pt-5 pb-5 border-b border-white/8">
-              <div className="flex items-center gap-3">
-                {/* Circular gauge */}
-                <svg width="62" height="62" viewBox="0 0 62 62" className="flex-shrink-0">
-                  <circle cx="31" cy="31" r="22" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="10" />
-                  <circle
-                    cx="31" cy="31" r="22"
-                    fill="none"
-                    stroke={scoreColor}
-                    strokeWidth="10"
-                    strokeLinecap="round"
-                    strokeDasharray={`${(2 * Math.PI * 22).toFixed(2)}`}
-                    strokeDashoffset={`${(2 * Math.PI * 22 * (1 - score / 100)).toFixed(2)}`}
-                    transform="rotate(-90 31 31)"
-                    style={{ transition: "stroke-dashoffset 0.5s ease" }}
+              <div className="flex items-end justify-between">
+                <div>
+                  <p className="leading-none" style={{ fontFamily: "'DM Serif Display', serif", fontSize: "64px", color: scoreColor }}>
+                    {score}
+                  </p>
+                  <p className="mt-1" style={{ fontFamily: "'DM Serif Display', serif", fontSize: "24px", color: "rgba(255,255,255,0.5)", lineHeight: "1" }}>
+                    of 100
+                  </p>
+                </div>
+                {/* Pill progress bar */}
+                <div className="relative h-4 rounded-full overflow-hidden mb-2" style={{ width: "116px", backgroundColor: scoreTrackColor }}>
+                  <div
+                    className="absolute left-0 top-0 h-full rounded-full transition-all duration-500"
+                    style={{ width: `${score}%`, backgroundColor: scoreColor }}
                   />
-                </svg>
-                {/* Score number */}
-                <p className="leading-none" style={{ fontFamily: "'DM Serif Display', serif", fontSize: "80px", color: scoreColor }}>
-                  {score}
-                </p>
-                {/* Issues count */}
-                <div className="flex flex-col leading-none gap-0.5">
-                  <p style={{ fontFamily: "'DM Serif Display', serif", fontSize: "48px", color: "white", lineHeight: "1" }}>
-                    {total}
-                  </p>
-                  <p style={{ fontFamily: "'DM Serif Display', serif", fontSize: "18px", color: "rgba(255,255,255,0.5)" }}>
-                    issues
-                  </p>
                 </div>
               </div>
             </div>
