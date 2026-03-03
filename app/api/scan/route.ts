@@ -176,56 +176,52 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: data.error }, { status: 500 });
     }
 
-    // Translate axe violations (these have bounding boxes)
-    // Filter out page-level container boxes (html/body/main spanning most of the page)
-    // — these create huge overlays that obscure the real content.
-    const axeViolationIds = new Set<string>();
-    const translated = (data.violations ?? []).map((v: any) => {
-      axeViolationIds.add(v.id);
+    // ── Phase 3: map-based merge with engine agreement tracking ──────────────
+    type EngineEntry = { engine: "axe" | "wave" | "ibm"; nodes: number; impact: string; boxes: any[] };
+    const violationMap = new Map<string, EngineEntry[]>();
+
+    // Axe — has real bounding boxes; filter huge page-level containers
+    for (const v of data.violations ?? []) {
       const filteredBoxes = (v.boxes ?? []).filter(
         (b: any) => !(b.width >= 1200 && b.height >= 500),
       );
-      return {
-        id: v.id,
-        impact: v.impact,
-        nodes: v.nodes,
-        boxes: filteredBoxes,
-        ...translateViolation(v.id),
-      };
-    });
-
-    // Add Wave-only violations (not already found by axe), no bounding boxes
-    const waveSeenIds = new Set<string>();
-    for (const wv of waveViolations) {
-      if (axeViolationIds.has(wv.id)) continue; // axe already covers it with boxes
-      if (waveSeenIds.has(wv.id)) continue;     // dedup within wave results
-      waveSeenIds.add(wv.id);
-      translated.push({
-        id: wv.id,
-        impact: wv.impact,
-        nodes: wv.nodes,
-        boxes: [],
-        ...translateViolation(wv.id),
-      });
+      const entries = violationMap.get(v.id) ?? [];
+      entries.push({ engine: "axe", nodes: v.nodes, impact: v.impact, boxes: filteredBoxes });
+      violationMap.set(v.id, entries);
     }
 
-    // Add IBM-only violations (not already found by axe or WAVE), no bounding boxes
+    // WAVE — no bounding boxes
+    for (const wv of waveViolations) {
+      const entries = violationMap.get(wv.id) ?? [];
+      entries.push({ engine: "wave", nodes: wv.nodes, impact: wv.impact, boxes: [] });
+      violationMap.set(wv.id, entries);
+    }
+
+    // IBM — no bounding boxes
     const ibmRaw: { ruleId: string; nodes: number; impact: string }[] = data.ibmViolations ?? [];
-    const ibmSeenIds = new Set<string>();
     for (const iv of ibmRaw) {
       const id = IBM_ID_MAP[iv.ruleId] ?? `ibm-${iv.ruleId}`;
-      if (axeViolationIds.has(id)) continue;  // axe already found it with boxes
-      if (waveSeenIds.has(id)) continue;       // wave already found it
-      if (ibmSeenIds.has(id)) continue;        // dedup within IBM results
-      ibmSeenIds.add(id);
-      translated.push({
-        id,
-        impact: iv.impact,
-        nodes: iv.nodes,
-        boxes: [],
-        ...translateViolation(id),
-      });
+      const entries = violationMap.get(id) ?? [];
+      entries.push({ engine: "ibm", nodes: iv.nodes, impact: iv.impact, boxes: [] });
+      violationMap.set(id, entries);
     }
+
+    // Merge: for each canonical ID pick the best data and compute confidence
+    const impactOrder: Record<string, number> = { critical: 4, serious: 3, moderate: 2, minor: 1 };
+    const translated = Array.from(violationMap.entries()).map(([id, entries]) => {
+      const axeEntry = entries.find(e => e.engine === "axe");
+      const boxes = axeEntry?.boxes ?? [];
+      const nodes = Math.max(...entries.map(e => e.nodes));
+      const bestImpact = entries.reduce((a, b) =>
+        (impactOrder[a.impact] ?? 0) >= (impactOrder[b.impact] ?? 0) ? a : b
+      ).impact;
+      const engines = entries.map(e => e.engine);
+      // 2+ engines = high, axe-only = medium, wave/ibm-only = low
+      const confidence: "high" | "medium" | "low" =
+        engines.length >= 2 ? "high" : engines[0] === "axe" ? "medium" : "low";
+
+      return { id, impact: bestImpact, nodes, boxes, engines, confidence, ...translateViolation(id) };
+    });
 
     translated.sort((a: any, b: any) => {
       const order: Record<string, number> = { "Quick win": 1, "Moderate": 2, "Complex": 3 };

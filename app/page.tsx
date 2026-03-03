@@ -20,6 +20,8 @@ type Violation = {
   effort: "Quick win" | "Moderate" | "Complex";
   effortTime: string;
   wcagUrl: string;
+  engines?: ("axe" | "wave" | "ibm")[];
+  confidence?: "high" | "medium" | "low";
 };
 
 type NumberedViolation = Violation & { num: number };
@@ -531,6 +533,11 @@ export default function Home() {
                         {v.effort === "Quick win" ? "Quick" : v.effort}
                       </span>
                     )}
+                    {(v.engines?.length ?? 0) >= 2 && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-[4px] font-medium leading-none bg-emerald-500/10 text-emerald-400">
+                        {v.engines!.length} engines
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
@@ -542,9 +549,16 @@ export default function Home() {
                 <p className="text-zinc-400 text-sm mb-1">
                   {v.category}{v.nodes > 1 ? ` · ${v.nodes} elements` : ""}
                 </p>
-                <span className={`inline-block text-xs px-1.5 py-0.5 rounded-[4px] font-medium leading-none mb-4 ${config.badge}`}>
-                  {v.effort === "Quick win" ? "Quick" : v.effort}
-                </span>
+                <div className="flex items-center gap-1.5 mb-3 flex-wrap">
+                  <span className={`text-xs px-1.5 py-0.5 rounded-[4px] font-medium leading-none ${config.badge}`}>
+                    {v.effort === "Quick win" ? "Quick" : v.effort}
+                  </span>
+                  {(v.engines ?? []).map(e => (
+                    <span key={e} className="text-[10px] px-1.5 py-0.5 rounded-[4px] font-medium leading-none bg-white/[0.06] text-zinc-400">
+                      {e === "wave" ? "WAVE" : e}
+                    </span>
+                  ))}
+                </div>
                 <p className="text-zinc-300 text-sm leading-relaxed mb-4">{v.why}</p>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-emerald-300 text-sm font-semibold uppercase tracking-[0.7px]">
