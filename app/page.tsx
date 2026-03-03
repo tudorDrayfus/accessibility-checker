@@ -628,7 +628,7 @@ export default function Home() {
                   value={domain}
                   onChange={setDomain}
                   history={urlHistory}
-                  placeholder="tarom.ro"
+                  placeholder="URL"
                   inputClassName="w-full h-[54px] bg-white/5 text-white border border-white/40 rounded-[4px] px-5 text-sm outline-none focus:border-white/60 transition placeholder-[#71717b]"
                 />
                 <button
