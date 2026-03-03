@@ -50,6 +50,32 @@ const WAVE_ID_MAP: Record<string, string> = {
   "pdf":                  "pdf-document",
 };
 
+// Maps IBM Equal Access rule IDs → our canonical violation IDs
+const IBM_ID_MAP: Record<string, string> = {
+  "HAAC_Img_UsemapAlt":                             "image-alt",
+  "img_alt_valid":                                  "image-alt",
+  "IBMA_Color_Contrast_WCAG2AA":                    "color-contrast",
+  "IBMA_Color_Contrast_WCAG2AA_PF":                 "color-contrast",
+  "WCAG20_Input_ExplicitLabel":                     "label",
+  "WCAG20_Input_LabelBefore":                       "label",
+  "WCAG20_Input_LabelAfter":                        "label",
+  "WCAG20_Btn_HasName":                             "button-name",
+  "WCAG20_A_HasText":                               "link-name",
+  "WCAG20_Doc_HasTitle":                            "document-title",
+  "WCAG20_Html_HasLang":                            "html-has-lang",
+  "WCAG20_Html_LangValid":                          "html-lang-valid",
+  "WCAG20_Elem_UniqueAccessKey":                    "duplicate-id",
+  "RPT_Elem_UniqueId":                              "duplicate-id",
+  "Rpt_Aria_RequiredChildren_Native_Host_Sematics": "aria-required-children",
+  "Rpt_Aria_ValidRole":                             "aria-roles",
+  "WCAG20_Input_InFieldSet":                        "fieldset-missing",
+  "WCAG20_Table_Structure":                         "table-layout",
+  "RPT_Header_HasContent":                          "th-empty",
+  "WCAG20_Frame_HasTitle":                          "frame-title",
+  "RPT_List_UseMarkup":                             "list",
+  "RPT_Script_OnclickHTML1":                        "tabindex",
+};
+
 // Alerts worth surfacing (ignore niche / deprecated items)
 const ALERT_ALLOWLIST = new Set([
   "alt_redundant", "alt_long", "alt_suspicious",
@@ -180,6 +206,24 @@ export async function POST(req: NextRequest) {
         nodes: wv.nodes,
         boxes: [],
         ...translateViolation(wv.id),
+      });
+    }
+
+    // Add IBM-only violations (not already found by axe or WAVE), no bounding boxes
+    const ibmRaw: { ruleId: string; nodes: number; impact: string }[] = data.ibmViolations ?? [];
+    const ibmSeenIds = new Set<string>();
+    for (const iv of ibmRaw) {
+      const id = IBM_ID_MAP[iv.ruleId] ?? `ibm-${iv.ruleId}`;
+      if (axeViolationIds.has(id)) continue;  // axe already found it with boxes
+      if (waveSeenIds.has(id)) continue;       // wave already found it
+      if (ibmSeenIds.has(id)) continue;        // dedup within IBM results
+      ibmSeenIds.add(id);
+      translated.push({
+        id,
+        impact: iv.impact,
+        nodes: iv.nodes,
+        boxes: [],
+        ...translateViolation(id),
       });
     }
 
