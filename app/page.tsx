@@ -349,7 +349,8 @@ export default function Home() {
   const [pageHeight, setPageHeight] = useState(900);
   const [activeViolation, setActiveViolation] = useState<NumberedViolation | null>(null);
   const [hiddenEfforts, setHiddenEfforts] = useState<Set<string>>(new Set());
-  const [showCanvas, setShowCanvas] = useState(true);
+  // Overlay is on whenever at least one effort filter is enabled
+  const showCanvas = !["Quick win", "Moderate", "Complex"].every(e => hiddenEfforts.has(e));
   const [urlHistory, setUrlHistory] = useState<string[]>([]);
   const [sortMode, setSortMode] = useState<"position" | "impact">("position");
   const rightPanelRef = useRef<HTMLDivElement>(null);
@@ -855,17 +856,6 @@ export default function Home() {
 
             {/* Legend / toggle */}
             <div className="flex items-center gap-2 mb-4 flex-wrap">
-              <button
-                onClick={() => setShowCanvas((v) => !v)}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-[4px] border transition-all text-sm ${
-                  showCanvas
-                    ? "border-white/20 bg-white/[0.08] text-zinc-200"
-                    : "border-white/10 bg-white/[0.03] text-zinc-500"
-                }`}
-              >
-                <div className={`w-2.5 h-2.5 rounded-sm border flex-shrink-0 transition-all ${showCanvas ? "bg-white/30 border-white/50" : "bg-transparent border-zinc-600"}`} />
-                {showCanvas ? "Overlays on" : "Overlays off"}
-              </button>
               {(["Quick win", "Moderate", "Complex"] as const).map((e) => {
                 const config = effortConfig[e];
                 const isHidden = hiddenEfforts.has(e);
